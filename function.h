@@ -4,7 +4,6 @@ struct XY_new
 {
 	double *y;
 	double **x;
-};
 
 XY_new new_sample(double *log_t, double **X, double *status, int n, int p)
 {
@@ -22,6 +21,7 @@ XY_new new_sample(double *log_t, double **X, double *status, int n, int p)
 	output.x = new double *[n1];
 	output.y = new double *[n1];
 	int k1 = 0;
+
 	for (int i = 0; i < n; i++)
 	{
 		if (status[i] == 1)
@@ -41,5 +41,4 @@ XY_new new_sample(double *log_t, double **X, double *status, int n, int p)
 		}
 		k1++;
 		//test git
-	}
 }
