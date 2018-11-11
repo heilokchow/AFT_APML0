@@ -40,5 +40,6 @@ XY_new new_sample(double *log_t, double **X, double *status, int n, int p)
 			}
 		}
 		k1++;
+		//test git
 	}
 }
