@@ -14,16 +14,14 @@ void swap_(double &x, double &y) {
 
 int partition(double *x, double *z, int low, int high)
 {
-	double pivot = z[high];    // pivot 
-	int i = (low - 1);  // Index of smaller element 
+	double pivot = z[high];
+	int i = (low - 1);
 
 	for (int j = low; j <= high - 1; j++)
 	{
-		// If current element is smaller than or 
-		// equal to pivot 
 		if (z[j] <= pivot)
 		{
-			i++;    // increment index of smaller element 
+			i++;
 			swap_(z[i], z[j]);
 			swap_(x[i], x[j]);
 		}

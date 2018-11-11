@@ -7,14 +7,15 @@
 #include <math.h>
 #include <ctime>
 #include "cdlasso.h"
+#include "function.h"
 
 using namespace std;
 
 int main()
 {
 	int n = 1000, p = 5000;
-	double **A = new double *[n];
-	double *B = new double[n];
+	//double **A = new double *[n];
+	//double *B = new double[n];
 	double *beta = new double[p];
 	double t1, t2, t3;
 	ofstream myfile;
@@ -35,28 +36,33 @@ int main()
 		beta[i] = 0;
 	}
 
-	seed_seq seed{ 1 };
-	mt19937 e(seed);
-	normal_distribution<> normal_dist(0, 1);
+	XY_old test(n, p, 1, beta);
 
-	for (int i = 0; i < n; i++)
-	{
-		A[i] = new double[p];
-	}
+	//seed_seq seed{ 1 };
+	//mt19937 e(seed);
+	//normal_distribution<> normal_dist(0, 1);
 
-	for (int i = 0; i < n; i++)
-	{
-		B[i] = normal_dist(e);
-		for (int j = 0; j < p; j++)
-		{
-			A[i][j] = normal_dist(e);
-			B[i] += A[i][j] * beta[j];
-		}
-	}
+	//for (int i = 0; i < n; i++)
+	//{
+	//	A[i] = new double[p];
+	//}
+
+	//for (int i = 0; i < n; i++)
+	//{
+	//	B[i] = normal_dist(e);
+	//	for (int j = 0; j < p; j++)
+	//	{
+	//		A[i][j] = normal_dist(e);
+	//		if (beta[j] != 0)
+	//		{
+	//			B[i] += A[i][j] * beta[j];
+	//		}
+	//	}
+	//}
 
 	t2 = clock();
 
-	beta = cdLasso(A, B, n, p, 10);
+	beta = cdLasso(test.x, test.y, n, p, 10);
 
 	t3 = clock();
 
@@ -66,13 +72,13 @@ int main()
 
 	myfile.close();
 
-	for (int i = 0; i < n; i++)
-	{
-		delete A[i];
-	}
+	//for (int i = 0; i < n; i++)
+	//{
+	//	delete A[i];
+	//}
 
-	delete[] A;
-	delete[] B;
+	//delete[] A;
+	//delete[] B;
 
 	time << (t2 - t1) / (double)CLOCKS_PER_SEC << endl;
 	time << (t3 - t2) / (double)CLOCKS_PER_SEC << endl;
