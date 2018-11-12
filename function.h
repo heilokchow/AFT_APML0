@@ -44,23 +44,57 @@ struct c_range
 	double high;
 };
 
-struct XY_new
-{
-	double *y;
-	double **x;
-};
 
 class XY_old
 {
 public:
 	XY_old(int,int,int,double*);
 	~XY_old();
+
+	void delete_old()
+	{
+		for (int i = 0; i < n; i++)
+		{
+			delete[] x[i];
+		}
+		delete[] x;
+		delete[] y;
+		delete[] status;
+		cout << "Manual Delete_old is called\n";
+	}
+
 	double *y;
 	double **x;
 	double *status;
 	int n;
 	int p;
 };
+
+class XY_new
+{
+public:
+	XY_new(XY_old const &A);
+	~XY_new();
+
+	void delete_new()
+	{
+		for (int i = 0; i < (n1 + 1); i++)
+		{
+			delete[] x[i];
+		}
+		delete[] x;
+		delete[] y;
+		cout << "Manual Delete_new is called\n";
+	}
+
+	double *y;
+	double **x;
+	int n;
+	int n1;
+	int p;
+};
+
+
 
 c_range new_range(double *y, double low, double high, int n)
 {
@@ -129,64 +163,58 @@ XY_old::XY_old(int n0, int p0, int seed0, double *beta)
 
 XY_old::~XY_old()
 {
-	for (int i = 0; i < n; i++)
-	{
-		delete[] x[i];
-	}
-	delete[] x;
-	delete[] y;
-	delete[] status;
+	cout << "Destructor_old is called\n";
 }
 
-
-XY_new new_sample(double *log_t, double **X, double *status, int n, int p)
+XY_new::XY_new(XY_old const &A)
 {
 	int k = 0;
-	int n1 = 0;
-	XY_new output;
+	n = A.n;
+	p = A.p;
 
 	for (int i = 0; i < n; i++)
 	{
-		if (status[i] == 1) k++;
+		if (A.status[i] == 1) k++;
 	}
 
 	n1 = k * (n - 1);
 
-	output.x = new double *[n1 + 1];
-	output.y = new double [n1 + 1];
+	x = new double *[n1 + 1];
+	y = new double[n1 + 1];
 	int k1 = 0;
 
+	x[n1] = new double[p];
 	for (int i = 0; i < p; i++)
 	{
-		output.x[n1][i] = 0;
+		x[n1][i] = 0;
 	}
 
 	for (int i = 0; i < n; i++)
 	{
-		if (status[i] == 1)
+		if (A.status[i] == 1)
 		{
 			for (int j = 0; j < n; j++)
 			{
 				if (j != i)
 				{
-					output.x[k1] = new double[p];
+					x[k1] = new double[p];
 					for (int z = 0; z < p; z++)
 					{
-						output.x[k1][z] = X[i][p] - X[j][p];
+						x[k1][z] = A.x[i][z] - A.x[j][z];
+						x[n1][z] += -x[k1][z];
 					}
-					output.y[k1] = log_t[i] - log_t[j];
+					y[k1] = A.y[i] - A.y[j];
 					k1++;
 				}
 			}
 		}
-
-		for (int j = 0; j < p; j++)
-		{
-			output.x[n1][j] += -output.x[i][j];
-		}
+		cout << n - i << '\n';
 	}
-	output.y[n1] = 1e8;
 
-	return output;
+	y[n1] = 1e6;
 }
 
+XY_new::~XY_new()
+{
+	cout << "Destructor_new is called\n";
+}

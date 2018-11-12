@@ -13,7 +13,22 @@ using namespace std;
 
 int main()
 {
-	int n = 1000, p = 5000;
+	int n, p;
+	char np;
+	double lambda;
+	cout << "Use default settings (n = 200, p = 10000)? (Y/N)\n";
+	cin >> np;
+	if (np == 'N' or np == 'n') {
+		cout << "Please provide the sample size:\n";
+		cin >> n;
+		cout << "Please provide the number of parameters (>15):\n";
+		cin >> p;
+	}
+	else {
+		n = 200;
+		p = 10000;
+	}
+
 	//double **A = new double *[n];
 	//double *B = new double[n];
 	double *beta = new double[p];
@@ -37,7 +52,8 @@ int main()
 	}
 
 	XY_old test(n, p, 1, beta);
-
+	XY_new test1(test);
+	
 	//seed_seq seed{ 1 };
 	//mt19937 e(seed);
 	//normal_distribution<> normal_dist(0, 1);
@@ -61,17 +77,15 @@ int main()
 	//}
 
 	t2 = clock();
-
-	beta = cdLasso(test.x, test.y, n, p, 10);
+	double *beta1 = cdLasso(test1.x, test1.y, n, p, 0.1);
 
 	t3 = clock();
 
 	for (int i = 0; i < p; i++) {
-		myfile << beta[i] << "\n";
+		myfile << beta1[i] << "\n";
 	}
 
 	myfile.close();
-
 	//for (int i = 0; i < n; i++)
 	//{
 	//	delete A[i];
@@ -79,6 +93,11 @@ int main()
 
 	//delete[] A;
 	//delete[] B;
+	test.delete_old();
+	test1.delete_new();
+	delete[] beta;
+	delete[] beta1;
+	//delete[] beta1;
 
 	time << (t2 - t1) / (double)CLOCKS_PER_SEC << endl;
 	time << (t3 - t2) / (double)CLOCKS_PER_SEC << endl;
