@@ -16,6 +16,8 @@ int main()
 	int n, p;
 	char np;
 	double lambda;
+	cout << "Please Provide Lambda\n";
+	cin >> lambda;
 	cout << "Use default settings (n = 200, p = 10000)? (Y/N)\n";
 	cin >> np;
 	if (np == 'N' or np == 'n') {
@@ -60,7 +62,7 @@ int main()
 
 	XY_old test(n, p, 1, beta);
 	XY_new test1(test);
-	//XY_new_sep test2 = test1.seperate(target, 10);
+	test1.seperate(target, 10);
 	
 	//seed_seq seed{ 1 };
 	//mt19937 e(seed);
@@ -85,8 +87,11 @@ int main()
 	//}
 
 	t2 = clock();
-	double *beta1 = cdLasso(test1.x, test1.y, (test1.n1 + 1), p, 0.1);
-
+	//double *beta1 = cdLasso(test1.x, test1.y, (test1.n1 + 1), p, lambda);
+	double *beta1 = cdLasso(test.x, test.y, test.n, p, lambda);
+	//double err = test1.LG(beta1);
+	//cout << "-----" << err << endl;
+    //double *beta1 = cdLasso(test1.x, test1.y, (test1.n1 + 1), p, 0.1);
 	t3 = clock();
 
 	for (int i = 0; i < p; i++) {
@@ -102,6 +107,7 @@ int main()
 	//delete[] A;
 	//delete[] B;
 	test.delete_old();
+	test1.delete_new_cv();
 	test1.delete_new();
 	delete[] beta;
 	delete[] beta1;

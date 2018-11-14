@@ -3,3 +3,4 @@
 *.o
 AFT_APML0/
 temp.cpp
+time log/

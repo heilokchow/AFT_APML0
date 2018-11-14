@@ -105,6 +105,7 @@ public:
 	}
 
 	void seperate(int *target, int k);
+	double LG(double *beta);
 
 	double *y;
 	int *y1;
@@ -247,12 +248,12 @@ XY_new::XY_new(XY_old const &A)
 				}
 			}
 		}
-		cout << n - i << '\n';
 	}
+	cout << "New Sample Formulated\n";
 
 	y1[n1] = 0;
 	y2[n1] = 0;
-	y[n1] = 1e6;
+	y[n1] = 1e10;
 }
 
 XY_new::~XY_new()
@@ -309,7 +310,7 @@ void XY_new::seperate(int *target, int k)
 			y2_train[s1] = y2[i];
 			x_train[s1] = x[i];
 			s1++;
-		}
+		}		
 		else
 		{
 			y_test[s2] = y[i];
@@ -318,6 +319,7 @@ void XY_new::seperate(int *target, int k)
 			x_test[s2] = x[i];
 			s2++;
 		}
+		
 	}
 
 	x_test[s2] = new double[p];
@@ -335,7 +337,7 @@ void XY_new::seperate(int *target, int k)
 		x_train[s1][j] = x[n1][j] - x_test[s2][j];
 	}
 
-	y_train[s1] = 1e6;
+	y_train[s1] = 1e10;
 	y_test[s2] = 0;
 	y1_train[s1] = 0;
 	y1_test[s2] = 0;
@@ -346,4 +348,24 @@ void XY_new::seperate(int *target, int k)
 	n1_test = s2;
 	n_train = n - k;
 	n1_train = s1;
+}
+
+double XY_new::LG(double *beta)
+{
+	double s = 0, r = 0;
+	for (int i = 0; i < n1_test; i++)
+	{
+		r = y_test[i];
+		for (int j = 0; j < p; j++)
+		{
+			r += -x_test[i][j]*beta[j];
+		}
+		s += abs(r);
+	}
+	
+	for (int i = 0; i < p; i++)
+	{
+		s += -x_test[n1_test][i]*beta[i];
+	}
+	return s;
 }
