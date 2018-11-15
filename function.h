@@ -324,6 +324,10 @@ void XY_new::seperate(int *target, int k)
 	}
 
 	x_test[s2] = new double[p];
+	for (int j = 0; j < p; j++) {
+		x_test[s2][j] = 0;
+	}
+
 	for (int i = 0; i < s2; i++)
 	{
 		for (int j = 0; j < p; j++)
@@ -354,21 +358,39 @@ void XY_new::seperate(int *target, int k)
 double XY_new::LG(double *beta)
 {
 	double s = 0, r = 0;
-	for (int i = 0; i < n1_test; i++)
+	for (int i = 0; i < n1; i++)
 	{
-		r = y_test[i];
+		r = y[i];
 		for (int j = 0; j < p; j++)
 		{
-			r += -x_test[i][j]*beta[j];
+			r += -x[i][j]*beta[j];
 		}
-		s += abs(r);
+		s += abs(r) - y[i];
 	}
 	
 	for (int i = 0; i < p; i++)
 	{
-		s += -x_test[n1_test][i]*beta[i];
+		s += -x[n1][i]*beta[i];
 	}
-	return s;
+
+	double s_train = 0;
+	for (int i = 0; i < n1_train; i++)
+	{
+		r = y_train[i];
+		for (int j = 0; j < p; j++)
+		{
+			r += -x_train[i][j]*beta[j];
+		}
+		s_train += abs(r) - y_train[i];
+	}
+	
+	for (int i = 0; i < p; i++)
+	{
+		s_train += -x_train[n1_train][i]*beta[i];
+	}
+
+	double ss = s/n - s_train/n_train;
+	return ss;
 }
 
 int find_rank(double *abs_beta, double v, int low, int high)

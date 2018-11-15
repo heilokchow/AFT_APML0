@@ -81,6 +81,9 @@ int main()
 		cin >> rep;
 		cout << "Please Provide Max number of paramters selected (<1000)\n";
 		cin >> maxit;
+		cout << "Please Provide Initial Seed\n";
+		int s0;
+		cin >> s0;
 		double lambda[20];
 		double *LG = new double[maxit];
 		double *stage2_beta = new double[p];
@@ -91,7 +94,7 @@ int main()
 
 		myfile.open("simulation_APML0.txt");
 		for (int z = 0; z < rep; z++) {
-			XY_old test(n, p, z, beta);
+			XY_old test(n, p, z + s0, beta);
 			XY_new test1(test);
 			double *best_beta;
 			double min_LG = 1e8, min_lambda = 1;
@@ -168,6 +171,7 @@ int main()
 		}
 		delete[] LG;
 		delete[] stage2_beta;
+		myfile.close();
 	}
 
 	return 0;
