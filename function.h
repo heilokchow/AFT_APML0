@@ -1,5 +1,6 @@
 #include <iomanip>
 #include <random>
+#include <cstdlib>
 
 using namespace std;
 
@@ -368,4 +369,61 @@ double XY_new::LG(double *beta)
 		s += -x_test[n1_test][i]*beta[i];
 	}
 	return s;
+}
+
+int find_rank(double *abs_beta, double v, int low, int high)
+{
+	int rank;
+	if (low == high) {
+		rank = low;
+		return rank;
+	}
+
+	if (high - low == 1) {
+		if (v > abs_beta[high]) {
+			rank = low;
+			return rank;
+		}
+		else {
+			rank = high;
+			return high;
+		}
+	}
+
+	int k = floor((low + high)/2.0);
+
+	if (v > abs_beta[k]) {
+		high = k - 1;
+		rank = find_rank(abs_beta, v, low, high);
+	}
+	else {
+		low = k;
+		rank = find_rank(abs_beta, v, low, high);
+	}
+}
+
+int *beta_rank(double *beta, int p)
+{
+	int *rank = new int[p];
+	double *beta_copy = new double[p];
+
+	for (int i = 0; i < p; i++) {
+		beta_copy[i] = abs(beta[i]);
+	}
+
+	quickSort0(beta_copy, 0, p - 1);
+
+	int i = 0, j = p - 1;
+	while (i < j) {
+		swap0(beta_copy[i], beta_copy[j]);
+		i++;
+		j--;
+	}
+
+	for (int i = 0; i < p; i++) {
+		rank[i] = find_rank(beta_copy, abs(beta[i]), 0, p - 1);
+	}
+
+	delete[] beta_copy;
+	return rank;
 }
