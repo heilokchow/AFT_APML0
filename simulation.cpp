@@ -92,8 +92,8 @@ int main()
 			lambda[i] = 0.01 * (i + 1);
 		}
 
-		myfile.open("simulation_APML0.txt");
 		for (int z = 0; z < rep; z++) {
+			myfile.open("simulation_APML0.txt",ios_base::app);
 			XY_old test(n, p, z + s0, beta);
 			XY_new test1(test);
 			double *best_beta;
@@ -167,11 +167,15 @@ int main()
 			delete[] rank;
 			test1.delete_new();
 			test.delete_old();
+			myfile.close();
 			cout << "-----------" << z << endl;
 		}
 		delete[] LG;
 		delete[] stage2_beta;
-		myfile.close();
+	myfile.open("simulation_APML0.txt",ios_base::app);
+	time_t result = std::time(nullptr);
+	myfile << asctime(localtime(&result)) << "\n";
+	myfile.close();
 	}
 
 	return 0;
