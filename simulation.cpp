@@ -84,11 +84,11 @@ int main()
 		cout << "Please Provide Initial Seed\n";
 		int s0;
 		cin >> s0;
-		double lambda[20];
+		double lambda[10];
 		double *LG = new double[maxit];
 		double *stage2_beta = new double[p];
 		int fold = floor(n/10);
-		for (int i = 0; i < 20; i++) {
+		for (int i = 0; i < 10; i++) {
 			lambda[i] = 0.01 * (i + 1);
 		}
 
@@ -100,7 +100,7 @@ int main()
 			double min_LG = 1e8, min_lambda = 1;
 			int min_k = maxit;
 			
-			for(int m = 0; m < 20; m++)
+			for(int m = 0; m < 10; m++)
 			{
 				for (int i = 0; i < maxit; i++) {
 					LG[i] = 0;
