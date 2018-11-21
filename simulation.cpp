@@ -11,8 +11,7 @@
 
 using namespace std;
 
-int main()
-{
+int main() {
 	int n, p, maxit;
 	char np;
 
@@ -32,6 +31,7 @@ int main()
 	double *beta = new double[p];
 	double t1, t2, t3;
 	ofstream myfile;
+	ofstream lasso;
 	ofstream time;
 
 	time.open("time.txt");
@@ -94,17 +94,21 @@ int main()
 
 		for (int z = 0; z < rep; z++) {
 			myfile.open("simulation_APML0.txt",ios_base::app);
+			lasso.open("simulation_LASSO.txt",ios_base::app);
 			XY_old test(n, p, z + s0, beta);
 			XY_new test1(test);
 			double *best_beta;
+			double *best_beta_LASSO;
 			double min_LG = 1e8, min_lambda = 1;
+			double min_LG_LASSO = 1e8, min_lamda_LASSO = 1;
 			int min_k = maxit;
 			
-			for(int m = 0; m < 10; m++)
-			{
+			for(int m = 0; m < 10; m++) {
 				for (int i = 0; i < maxit; i++) {
 					LG[i] = 0;
 				}
+
+				double LG_LASSO = 0;
 
 				for (int i = 0; i < 10; i++) {
 					int low = fold * i;
@@ -133,6 +137,8 @@ int main()
 						}
 						LG[j] += test1.LG(stage2_beta);
 					}
+					LG_LASSO += test1.LG(rep_beta);
+					
 					delete[] rank;
 					delete[] rep_beta;
 					delete[] target;
@@ -146,12 +152,22 @@ int main()
 						min_k = j + 1;
 					}
 				}
+
+				if (min_LG_LASSO > LG_LASSO) {
+					min_LG_LASSO = LG_LASSO;
+					min_lamda_LASSO = lambda[m];
+				}
 				cout << m << "\n";
 			}
 
 			myfile << min_LG << "," << min_lambda << "," << min_k << ",";
+			lasso << min_LG_LASSO << "," << min_lamda_LASSO << ",";
 			best_beta = cdLasso(test1.x, test1.y, (test1.n1 + 1), p, min_lambda*pow(test1.n, 2));
+			best_beta_LASSO = cdLasso(test1.x, test1.y, (test1.n1 + 1), p, min_lamda_LASSO*pow(test1.n, 2));
 			int *rank = beta_rank(best_beta, p);
+			int nlasso = number_nzero(best_beta_LASSO, p);
+			lasso << nlasso << ",";
+
 			for (int j = 0; j < p; j++) {
 				if (rank[j] < min_k) {
 					stage2_beta[j] = best_beta[j];
@@ -161,21 +177,30 @@ int main()
 					stage2_beta[j] = 0;
 					myfile << stage2_beta[j] << ",";
 				}
+				lasso << best_beta_LASSO[j] << ",";
 			}
+
 			myfile << "\n";
+			lasso << "\n";
 			delete[] best_beta;
+			delete[] best_beta_LASSO;
 			delete[] rank;
 			test1.delete_new();
 			test.delete_old();
 			myfile.close();
+			lasso.close();
 			cout << "-----------" << z << endl;
 		}
 		delete[] LG;
 		delete[] stage2_beta;
 	myfile.open("simulation_APML0.txt",ios_base::app);
+	lasso.open("simulation_LASSO.txt",ios_base::app);
 	time_t result = std::time(nullptr);
 	myfile << asctime(localtime(&result)) << "\n";
 	myfile.close();
+	time_t result1 = std::time(nullptr);
+	lasso << asctime(localtime(&result1)) << "\n";
+	lasso.close();
 	}
 
 	return 0;

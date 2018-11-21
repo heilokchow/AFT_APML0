@@ -10,15 +10,12 @@ void swap0(double &x, double &y) {
 	y = temp;
 }
 
-int partition0(double *z, int low, int high)
-{
+int partition0(double *z, int low, int high) {
 	double pivot = z[high];
 	int i = (low - 1);
 
-	for (int j = low; j <= high - 1; j++)
-	{
-		if (z[j] <= pivot)
-		{
+	for (int j = low; j <= high - 1; j++) {
+		if (z[j] <= pivot) {
 			i++;
 			swap0(z[i], z[j]);
 		}
@@ -28,10 +25,8 @@ int partition0(double *z, int low, int high)
 	return (i + 1);
 }
 
-void quickSort0(double *z, int low, int high)
-{
-	if (low < high)
-	{
+void quickSort0(double *z, int low, int high) {
+	if (low < high) {
 		int pi = partition0(z, low, high);
 
 		quickSort0(z, low, pi - 1);
@@ -39,22 +34,18 @@ void quickSort0(double *z, int low, int high)
 	}
 }
 
-struct c_range
-{
+struct c_range {
 	double low;
 	double high;
 };
 
-class XY_old
-{
+class XY_old {
 public:
 	XY_old(int,int,int,double*);
 	~XY_old();
 
-	void delete_old()
-	{
-		for (int i = 0; i < n; i++)
-		{
+	void delete_old() {
+		for (int i = 0; i < n; i++) {
 			delete[] x[i];
 		}
 		delete[] x;
@@ -70,16 +61,13 @@ public:
 	int p;
 };
 
-class XY_new
-{
+class XY_new {
 public:
 	XY_new(XY_old const &A);
 	~XY_new();
 
-	void delete_new()
-	{
-		for (int i = 0; i < (n1 + 1); i++)
-		{
+	void delete_new() {
+		for (int i = 0; i < (n1 + 1); i++) {
 			delete[] x[i];
 		}
 		delete[] x;
@@ -89,8 +77,7 @@ public:
 		cout << "Manual Delete_new is called\n";
 	}
 
-	void delete_new_cv()
-	{
+	void delete_new_cv() {
 		delete[] x_train[n1_train];
 		delete[] x_train;
 		delete[] y_train;
@@ -133,11 +120,9 @@ public:
 
 
 
-c_range new_range(double *y, double low, double high, int n)
-{
+c_range new_range(double *y, double low, double high, int n) {
 	double *z = new double[n];
-	for (int i = 0; i < n; i++)
-	{
+	for (int i = 0; i < n; i++) {
 		z[i] = y[i];
 	}
 
@@ -155,8 +140,7 @@ c_range new_range(double *y, double low, double high, int n)
 }
 
 
-XY_old::XY_old(int n0, int p0, int seed0, double *beta)
-{
+XY_old::XY_old(int n0, int p0, int seed0, double *beta) {
 	n = n0;
 	p = p0;
 	y = new double[n];
@@ -169,12 +153,10 @@ XY_old::XY_old(int n0, int p0, int seed0, double *beta)
 	normal_distribution<double> normal_dist(0.0, 1.0);
 	uniform_real_distribution<double> uni_dist(0.0, 1.0);
 
-	for (int i = 0; i < n; i++)
-	{
+	for (int i = 0; i < n; i++) {
 		x[i] = new double[p];
 		y[i] = normal_dist(e);
-		for (int j = 0; j < p; j++)
-		{
+		for (int j = 0; j < p; j++) {
 			x[i][j] = normal_dist(e);
 			y[i] += x[i][j] * beta[j];
 		}
@@ -183,34 +165,28 @@ XY_old::XY_old(int n0, int p0, int seed0, double *beta)
 	c_range c0 = new_range(y, 0.50, 0.85, n);
 	uniform_real_distribution<double> uni_dist0(c0.low, c0.high);
 	
-	for (int i = 0; i < n; i++)
-	{
+	for (int i = 0; i < n; i++) {
 		c = uni_dist0(e);
-		if (y[i] > c)
-		{
+		if (y[i] > c) {
 			y[i] = c;
 			status[i] = 0;
 		}
-		else
-		{
+		else {
 			status[i] = 1;
 		}
 	}	
 }
 
-XY_old::~XY_old()
-{
+XY_old::~XY_old() {
 	cout << "Destructor_old is called\n";
 }
 
-XY_new::XY_new(XY_old const &A)
-{
+XY_new::XY_new(XY_old const &A) {
 	int k = 0;
 	n = A.n;
 	p = A.p;
 
-	for (int i = 0; i < n; i++)
-	{
+	for (int i = 0; i < n; i++) {
 		if (A.status[i] == 1) k++;
 	}
 
@@ -223,22 +199,16 @@ XY_new::XY_new(XY_old const &A)
 	int k1 = 0;
 
 	x[n1] = new double[p];
-	for (int i = 0; i < p; i++)
-	{
+	for (int i = 0; i < p; i++) {
 		x[n1][i] = 0;
 	}
 
-	for (int i = 0; i < n; i++)
-	{
-		if (A.status[i] == 1)
-		{
-			for (int j = 0; j < n; j++)
-			{
-				if (j != i)
-				{
+	for (int i = 0; i < n; i++) {
+		if (A.status[i] == 1) {
+			for (int j = 0; j < n; j++) {
+				if (j != i) {
 					x[k1] = new double[p];
-					for (int z = 0; z < p; z++)
-					{
+					for (int z = 0; z < p; z++) {
 						x[k1][z] = A.x[i][z] - A.x[j][z];
 						x[n1][z] += -x[k1][z];
 					}
@@ -257,27 +227,21 @@ XY_new::XY_new(XY_old const &A)
 	y[n1] = 1e10;
 }
 
-XY_new::~XY_new()
-{
+XY_new::~XY_new() {
 	cout << "Destructor_new is called\n";
 }
 
-void XY_new::seperate(int *target, int k)
-{
+void XY_new::seperate(int *target, int k) {
 	int s = 0;
-	for (int i = 0; i < n1; i++)
-	{
+	for (int i = 0; i < n1; i++) {
 		int flag = 0;
-		for (int j = 0; j < k; j++)
-		{
-			if (target[j] == y1[i] || target[j] == y2[i])
-			{
+		for (int j = 0; j < k; j++) {
+			if (target[j] == y1[i] || target[j] == y2[i]) {
 				flag = 1;
 			}
 		}
 
-		if (flag == 0)
-		{
+		if (flag == 0) {
 			s++;
 		}
 	}
@@ -293,27 +257,22 @@ void XY_new::seperate(int *target, int k)
 	x_test = new double *[n1 - s + 1];
 
 	int s1 = 0, s2 = 0;
-	for (int i = 0; i < n1; i++)
-	{
+	for (int i = 0; i < n1; i++) {
 		int flag = 0;
-		for (int j = 0; j < k; j++)
-		{
-			if (target[j] == y1[i] || target[j] == y2[i])
-			{
+		for (int j = 0; j < k; j++) {
+			if (target[j] == y1[i] || target[j] == y2[i]) {
 				flag = 1;
 			}
 		}
 
-		if (flag == 0)
-		{
+		if (flag == 0) {
 			y_train[s1] = y[i];
 			y1_train[s1] = y1[i];
 			y2_train[s1] = y2[i];
 			x_train[s1] = x[i];
 			s1++;
 		}		
-		else
-		{
+		else {
 			y_test[s2] = y[i];
 			y1_test[s2] = y1[i];
 			y2_test[s2] = y2[i];
@@ -328,17 +287,14 @@ void XY_new::seperate(int *target, int k)
 		x_test[s2][j] = 0;
 	}
 
-	for (int i = 0; i < s2; i++)
-	{
-		for (int j = 0; j < p; j++)
-		{
+	for (int i = 0; i < s2; i++) {
+		for (int j = 0; j < p; j++) {
 			x_test[s2][j] += -x_test[i][j];
 		}
 	}
 
 	x_train[s1] = new double[p];
-	for (int j = 0; j < p; j++)
-	{
+	for (int j = 0; j < p; j++) {
 		x_train[s1][j] = x[n1][j] - x_test[s2][j];
 	}
 
@@ -355,37 +311,30 @@ void XY_new::seperate(int *target, int k)
 	n1_train = s1;
 }
 
-double XY_new::LG(double *beta)
-{
+double XY_new::LG(double *beta) {
 	double s = 0, r = 0;
-	for (int i = 0; i < n1; i++)
-	{
+	for (int i = 0; i < n1; i++) {
 		r = y[i];
-		for (int j = 0; j < p; j++)
-		{
+		for (int j = 0; j < p; j++) {
 			r += -x[i][j]*beta[j];
 		}
 		s += abs(r) - y[i];
 	}
 	
-	for (int i = 0; i < p; i++)
-	{
+	for (int i = 0; i < p; i++) {
 		s += -x[n1][i]*beta[i];
 	}
 
 	double s_train = 0;
-	for (int i = 0; i < n1_train; i++)
-	{
+	for (int i = 0; i < n1_train; i++) {
 		r = y_train[i];
-		for (int j = 0; j < p; j++)
-		{
+		for (int j = 0; j < p; j++) {
 			r += -x_train[i][j]*beta[j];
 		}
 		s_train += abs(r) - y_train[i];
 	}
 	
-	for (int i = 0; i < p; i++)
-	{
+	for (int i = 0; i < p; i++) {
 		s_train += -x_train[n1_train][i]*beta[i];
 	}
 
@@ -393,8 +342,7 @@ double XY_new::LG(double *beta)
 	return ss;
 }
 
-int find_rank(double *abs_beta, double v, int low, int high)
-{
+int find_rank(double *abs_beta, double v, int low, int high) {
 	int rank;
 	if (low == high) {
 		rank = low;
@@ -424,8 +372,7 @@ int find_rank(double *abs_beta, double v, int low, int high)
 	}
 }
 
-int *beta_rank(double *beta, int p)
-{
+int *beta_rank(double *beta, int p) {
 	int *rank = new int[p];
 	double *beta_copy = new double[p];
 
@@ -448,4 +395,14 @@ int *beta_rank(double *beta, int p)
 
 	delete[] beta_copy;
 	return rank;
+}
+
+int number_nzero(double *beta, int p) {
+	int s = 0;
+	for(int i = 0; i < p; i++) {
+		if (abs(beta[i]) > 1e-6) {
+			s++;
+		}	
+	}
+	return s;
 }
