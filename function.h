@@ -41,6 +41,9 @@ struct c_range {
 
 class XY_old {
 public:
+	XY_old() {
+		cout << "XY_old Constructed\n";
+	}
 	XY_old(int,int,int,double*);
 	~XY_old();
 
