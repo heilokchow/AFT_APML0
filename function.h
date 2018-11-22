@@ -4,58 +4,19 @@
 
 using namespace std;
 
-void swap0(double &x, double &y) {
-	double temp = x;
-	x = y;
-	y = temp;
-}
-
-int partition0(double *z, int low, int high) {
-	double pivot = z[high];
-	int i = (low - 1);
-
-	for (int j = low; j <= high - 1; j++) {
-		if (z[j] <= pivot) {
-			i++;
-			swap0(z[i], z[j]);
-		}
-	}
-	swap0(z[i + 1], z[high]);
-
-	return (i + 1);
-}
-
-void quickSort0(double *z, int low, int high) {
-	if (low < high) {
-		int pi = partition0(z, low, high);
-
-		quickSort0(z, low, pi - 1);
-		quickSort0(z, pi + 1, high);
-	}
-}
-
-struct c_range {
+struct c_range 
+{
 	double low;
 	double high;
 };
 
-class XY_old {
+class XY_old 
+{
 public:
-	XY_old() {
-		cout << "XY_old Constructed\n";
-	}
+	XY_old();
 	XY_old(int,int,int,double*);
 	~XY_old();
-
-	void delete_old() {
-		for (int i = 0; i < n; i++) {
-			delete[] x[i];
-		}
-		delete[] x;
-		delete[] y;
-		delete[] status;
-		cout << "Manual Delete_old is called\n";
-	}
+	void delete_old();
 
 	double *y;
 	double **x;
@@ -64,39 +25,17 @@ public:
 	int p;
 };
 
-class XY_new {
+class XY_new 
+{
 public:
 	XY_new(XY_old const &A);
 	~XY_new();
-
-	void delete_new() {
-		for (int i = 0; i < (n1 + 1); i++) {
-			delete[] x[i];
-		}
-		delete[] x;
-		delete[] y;
-		delete[] y1;
-		delete[] y2;
-		cout << "Manual Delete_new is called\n";
-	}
-
-	void delete_new_cv() {
-		delete[] x_train[n1_train];
-		delete[] x_train;
-		delete[] y_train;
-		delete[] y1_train;
-		delete[] y2_train;
-
-		delete[] x_test[n1_test];
-		delete[] x_test;
-		delete[] y_test;
-		delete[] y1_test;
-		delete[] y2_test;
-		cout << "Manual Delete_new_cv is called\n";
-	}
-
-	void seperate(int *target, int k);
-	double LG(double *beta);
+	void delete_new();
+	void delete_new_beta();
+	void cross_validation(ofstream &myfile, ofstream &lasso, int maxit);
+	double *get_beta();
+	double *get_beta_LASSO();
+	double c_index(double *e_beta);
 
 	double *y;
 	int *y1;
@@ -105,6 +44,14 @@ public:
 	int n;
 	int n1;
 	int p;
+
+	double* best_beta;
+	double* best_beta_LASSO;
+
+private:
+	void delete_new_cv();
+	void seperate(int *target, int k);
+	double LG(double *beta);
 
 	double *y_train;
 	int *y1_train;
@@ -121,9 +68,41 @@ public:
 	int n1_test;
 };
 
+void swap0(double &x, double &y)
+{
+	double temp = x;
+	x = y;
+	y = temp;
+}
 
+int partition0(double *z, int low, int high)
+{
+	double pivot = z[high];
+	int i = (low - 1);
 
-c_range new_range(double *y, double low, double high, int n) {
+	for (int j = low; j <= high - 1; j++) {
+		if (z[j] <= pivot) {
+			i++;
+			swap0(z[i], z[j]);
+		}
+	}
+	swap0(z[i + 1], z[high]);
+
+	return (i + 1);
+}
+
+void quickSort0(double *z, int low, int high)
+{
+	if (low < high) {
+		int pi = partition0(z, low, high);
+
+		quickSort0(z, low, pi - 1);
+		quickSort0(z, pi + 1, high);
+	}
+}
+
+c_range new_range(double *y, double low, double high, int n) 
+{
 	double *z = new double[n];
 	for (int i = 0; i < n; i++) {
 		z[i] = y[i];
@@ -131,8 +110,8 @@ c_range new_range(double *y, double low, double high, int n) {
 
 	quickSort0(z, 0, (n - 1));
 
-	int n1 = floor(low * (n - 1));
-	int n2 = floor(high* (n - 1));
+	int n1 = int (floor(low * (n - 1)) + 0.5);
+	int n2 = int (floor(high* (n - 1)) + 0.5);
 
 	c_range output;
 	output.low = z[n1];
@@ -142,8 +121,13 @@ c_range new_range(double *y, double low, double high, int n) {
 	return output;
 }
 
+XY_old::XY_old()
+{
+	cout << "XY_old Constructed\n";
+}
 
-XY_old::XY_old(int n0, int p0, int seed0, double *beta) {
+XY_old::XY_old(int n0, int p0, int seed0, double *beta) 
+{
 	n = n0;
 	p = p0;
 	y = new double[n];
@@ -180,11 +164,23 @@ XY_old::XY_old(int n0, int p0, int seed0, double *beta) {
 	}	
 }
 
+void XY_old::delete_old()
+{
+	for (int i = 0; i < n; i++) {
+		delete[] x[i];
+	}
+	delete[] x;
+	delete[] y;
+	delete[] status;
+	cout << "Manual Delete_old is called\n";
+}
+
 XY_old::~XY_old() {
 	cout << "Destructor_old is called\n";
 }
 
-XY_new::XY_new(XY_old const &A) {
+XY_new::XY_new(XY_old const &A) 
+{
 	int k = 0;
 	n = A.n;
 	p = A.p;
@@ -227,7 +223,7 @@ XY_new::XY_new(XY_old const &A) {
 
 	y1[n1] = 0;
 	y2[n1] = 0;
-	y[n1] = 1e10;
+	y[n1] = 1e8;
 }
 
 XY_new::~XY_new() {
@@ -301,7 +297,7 @@ void XY_new::seperate(int *target, int k) {
 		x_train[s1][j] = x[n1][j] - x_test[s2][j];
 	}
 
-	y_train[s1] = 1e10;
+	y_train[s1] = 1e8;
 	y_test[s2] = 0;
 	y1_train[s1] = 0;
 	y1_test[s2] = 0;
@@ -314,7 +310,42 @@ void XY_new::seperate(int *target, int k) {
 	n1_train = s1;
 }
 
-double XY_new::LG(double *beta) {
+void XY_new::delete_new()
+{
+	for (int i = 0; i < (n1 + 1); i++) {
+		delete[] x[i];
+	}
+	delete[] x;
+	delete[] y;
+	delete[] y1;
+	delete[] y2;
+	cout << "Manual Delete_new is called\n";
+}
+
+void XY_new::delete_new_beta()
+{
+	delete[] best_beta;
+	delete[] best_beta_LASSO;
+}
+
+void XY_new::delete_new_cv()
+{
+	delete[] x_train[n1_train];
+	delete[] x_train;
+	delete[] y_train;
+	delete[] y1_train;
+	delete[] y2_train;
+
+	delete[] x_test[n1_test];
+	delete[] x_test;
+	delete[] y_test;
+	delete[] y1_test;
+	delete[] y2_test;
+	cout << "Manual Delete_new_cv is called\n";
+}
+
+double XY_new::LG(double *beta) 
+{
 	double s = 0, r = 0;
 	for (int i = 0; i < n1; i++) {
 		r = y[i];
@@ -345,7 +376,8 @@ double XY_new::LG(double *beta) {
 	return ss;
 }
 
-int find_rank(double *abs_beta, double v, int low, int high) {
+int find_rank(double *abs_beta, double v, int low, int high) 
+{
 	int rank;
 	if (low == high) {
 		rank = low;
@@ -363,7 +395,7 @@ int find_rank(double *abs_beta, double v, int low, int high) {
 		}
 	}
 
-	int k = floor((low + high)/2.0);
+	int k = int (floor((low + high)/2.0) + 0.5);
 
 	if (v > abs_beta[k]) {
 		high = k - 1;
@@ -373,9 +405,11 @@ int find_rank(double *abs_beta, double v, int low, int high) {
 		low = k;
 		rank = find_rank(abs_beta, v, low, high);
 	}
+	return rank;
 }
 
-int *beta_rank(double *beta, int p) {
+int *beta_rank(double *beta, int p) 
+{
 	int *rank = new int[p];
 	double *beta_copy = new double[p];
 
@@ -400,12 +434,140 @@ int *beta_rank(double *beta, int p) {
 	return rank;
 }
 
-int number_nzero(double *beta, int p) {
+int number_nzero(double *beta, int p)
+{
 	int s = 0;
-	for(int i = 0; i < p; i++) {
+	for (int i = 0; i < p; i++) {
 		if (abs(beta[i]) > 1e-6) {
 			s++;
-		}	
+		}
 	}
 	return s;
+}
+
+void XY_new::cross_validation(ofstream &myfile, ofstream &lasso, int maxit)
+{
+	double lambda[5];
+	for (int i = 0; i < 5; i++) {
+		lambda[i] = 0.01 + 0.02 * i;
+	}
+	double *stage2_beta = new double[p];
+	int fold = int (floor(n / 10) + 0.5);
+
+	double min_LG = 1e8, min_lambda = 1;
+	double min_LG_LASSO = 1e8, min_lamda_LASSO = 1;
+	double *LG1 = new double[maxit];
+	int min_k = maxit;
+
+	for (int m = 0; m < 5; m++) {
+		for (int i = 0; i < maxit; i++) {
+			LG1[i] = 0;
+		}
+
+		double LG_LASSO = 0;
+
+		for (int i = 0; i < 10; i++) {
+			int low = fold * i;
+			int high = fold * (i + 1) - 1;
+			if (i == 9) {
+				high = n - 1;
+			}
+
+			int d = high - low + 1;
+			int *target = new int[d];
+			for (int j = 0; j < d; j++) {
+				target[j] = low + j;
+			}
+
+			seperate(target, d);
+			double *rep_beta = cdLasso(x_train, y_train, (n1_train + 1), 
+										p, lambda[m] * pow(n_train, 2));
+			int *rank = beta_rank(rep_beta, p);
+			for (int j = 0; j < maxit; j++) {
+				for (int j_ = 0; j_ < p; j_++) {
+					if (rank[j_] <= j) {
+						stage2_beta[j_] = rep_beta[j_];
+					}
+					else {
+						stage2_beta[j_] = 0;
+					}
+				}
+				LG1[j] += LG(stage2_beta);
+			}
+			LG_LASSO += LG(rep_beta);
+
+			delete[] rank;
+			delete[] rep_beta;
+			delete[] target;
+			delete_new_cv();
+		}
+
+		for (int j = 0; j < maxit; j++) {
+			if (min_LG > LG1[j]) {
+				min_LG = LG1[j];
+				min_lambda = lambda[m];
+				min_k = j + 1;
+			}
+		}
+
+		if (min_LG_LASSO > LG_LASSO) {
+			min_LG_LASSO = LG_LASSO;
+			min_lamda_LASSO = lambda[m];
+		}
+		cout << m << "\n";
+	}
+	delete[] LG1;
+
+	myfile << min_LG << "," << min_lambda << "," << min_k << ",";
+	lasso << min_LG_LASSO << "," << min_lamda_LASSO << ",";
+	best_beta = cdLasso(x, y, (n1 + 1), p, min_lambda*pow(n, 2));
+	best_beta_LASSO = cdLasso(x, y, (n1 + 1), p, min_lamda_LASSO*pow(n, 2));
+	int *rank = beta_rank(best_beta, p);
+	int nlasso = number_nzero(best_beta_LASSO, p);
+	lasso << nlasso << ",";
+
+	for (int j = 0; j < p; j++) {
+		if (rank[j] < min_k) {
+			stage2_beta[j] = best_beta[j];
+			myfile << stage2_beta[j] << ",";
+		}
+		else {
+			stage2_beta[j] = 0;
+			myfile << stage2_beta[j] << ",";
+		}
+		lasso << best_beta_LASSO[j] << ",";
+	}
+
+	best_beta = stage2_beta;
+	myfile << "\n";
+	lasso << "\n";
+	delete[] rank;
+}
+
+double*XY_new::get_beta()
+{
+	return best_beta;
+}
+
+double*XY_new::get_beta_LASSO()
+{
+	return best_beta_LASSO;
+}
+
+double XY_new::c_index(double *e_beta)
+{
+	int c0 = 0;
+	double y0;
+	for (int i = 0; i < n1; i++) {
+		y0 = 0;
+		
+		for (int j = 0; j < p; j++)
+			y0 += x[i][j] * e_beta[j];
+
+		if ((y0*y[i]) > 0)
+			c0++;
+	}
+	
+	double c1 = c0 / (double) n1;
+	return c1;
 }
