@@ -36,10 +36,12 @@ public:
 	double *get_beta();
 	double *get_beta_LASSO();
 	double c_index(double *e_beta);
+	double LG_all(double *beta, double lambda);
 
 	double *y;
 	int *y1;
 	int *y2;
+	int *status2;
 	double **x;
 	int n;
 	int n1;
@@ -195,6 +197,7 @@ XY_new::XY_new(XY_old const &A)
 	y = new double[n1 + 1];
 	y1 = new int[n1 + 1];
 	y2 = new int[n1 + 1];
+	status2 = new int[n1 + 1];
 	int k1 = 0;
 
 	x[n1] = new double[p];
@@ -214,6 +217,7 @@ XY_new::XY_new(XY_old const &A)
 					y[k1] = A.y[i] - A.y[j];
 					y1[k1] = i;
 					y2[k1] = j;
+					status2[k1] = A.status[j];
 					k1++;
 				}
 			}
@@ -223,11 +227,33 @@ XY_new::XY_new(XY_old const &A)
 
 	y1[n1] = 0;
 	y2[n1] = 0;
+	status2[n1] = 0;
 	y[n1] = 1e8;
 }
 
 XY_new::~XY_new() {
 	cout << "Destructor_new is called\n";
+}
+
+double XY_new::LG_all(double *beta, double lambda)
+{
+	double s = 0, r = 0;
+	for (int i = 0; i < n1; i++) {
+		r = y[i];
+		for (int j = 0; j < p; j++) {
+			r += -x[i][j] * beta[j];
+		}
+		if (r < 0)
+		{
+			s += -r;
+		}
+	}
+
+	for (int i = 0; i < p; i++)
+	{
+		s += lambda * abs(beta[i]);
+	}
+	return s;
 }
 
 void XY_new::seperate(int *target, int k) {
@@ -319,6 +345,7 @@ void XY_new::delete_new()
 	delete[] y;
 	delete[] y1;
 	delete[] y2;
+	delete[] status2;
 	cout << "Manual Delete_new is called\n";
 }
 
@@ -352,26 +379,24 @@ double XY_new::LG(double *beta)
 		for (int j = 0; j < p; j++) {
 			r += -x[i][j]*beta[j];
 		}
-		s += abs(r) - y[i];
+		if (r < 0)
+		{
+			s += -r;
+		}
 	}
 	
-	for (int i = 0; i < p; i++) {
-		s += -x[n1][i]*beta[i];
-	}
-
 	double s_train = 0;
 	for (int i = 0; i < n1_train; i++) {
 		r = y_train[i];
 		for (int j = 0; j < p; j++) {
 			r += -x_train[i][j]*beta[j];
 		}
-		s_train += abs(r) - y_train[i];
+		if (r < 0)
+		{
+			s_train += -r;
+		}
 	}
 	
-	for (int i = 0; i < p; i++) {
-		s_train += -x_train[n1_train][i]*beta[i];
-	}
-
 	double ss = s/n - s_train/n_train;
 	return ss;
 }
@@ -557,6 +582,7 @@ double*XY_new::get_beta_LASSO()
 double XY_new::c_index(double *e_beta)
 {
 	int c0 = 0;
+	double c2 = 0;
 	double y0;
 	for (int i = 0; i < n1; i++) {
 		y0 = 0;
@@ -564,10 +590,13 @@ double XY_new::c_index(double *e_beta)
 		for (int j = 0; j < p; j++)
 			y0 += x[i][j] * e_beta[j];
 
-		if ((y0*y[i]) > 0)
-			c0++;
+		if (y[i] < 0) {
+			if (y0 < 0)
+				c0++;
+			c2++;
+		}
 	}
 	
-	double c1 = c0 / (double) n1;
+	double c1 = c0 / c2;
 	return c1;
 }

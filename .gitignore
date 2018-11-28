@@ -7,3 +7,5 @@ time log/
 cdlasso_v1.h
 debug_use/
 debug_simulation/
+*.csv
+.Rhistory

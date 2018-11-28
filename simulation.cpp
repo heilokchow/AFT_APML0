@@ -33,6 +33,7 @@ int main() {
 	double t1, t2, t3;
 	ofstream myfile;
 	ofstream lasso;
+	ofstream check;
 	ofstream time;
 
 	time.open("time.txt");
@@ -58,9 +59,21 @@ int main() {
 		XY_new test1(test);
 
 		t2 = clock();
-		double *beta1 = cdLasso(test1.x, test1.y, (test1.n1 + 1), p, lambda*pow(test1.n, 2));
+		double *beta1 = cdLasso(test1.x, test1.y, (test1.n1 + 1), p, lambda*(test1.n1 + 1));
+
+		check.open("check.txt");
+		for (int i = 0; i < (test1.n1 + 1); i++) {
+			check << test1.y[i] << ",";
+			for (int j = 0; j < p; j++) {
+				check << test1.x[i][j] << ",";
+			}
+			check << '\n';
+		}
+		check.close();
 
 		t3 = clock();
+		double s = test1.LG_all(beta1, lambda*(test1.n1 + 1));
+		myfile << s << "\n";
 		for (int i = 0; i < p; i++) {
 			myfile << beta1[i] << "\n";
 		}
