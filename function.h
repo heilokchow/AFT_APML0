@@ -245,7 +245,7 @@ double XY_new::LG_all(double *beta, double lambda)
 		}
 		if (r < 0)
 		{
-			s += -r;
+			s += -2 * r;
 		}
 	}
 
@@ -472,10 +472,15 @@ int number_nzero(double *beta, int p)
 
 void XY_new::cross_validation(ofstream &myfile, ofstream &lasso, int maxit)
 {
-	double lambda[5];
-	for (int i = 0; i < 5; i++) {
-		lambda[i] = 0.01 + 0.02 * i;
-	}
+	double lambda[7];
+	lambda[0] = 0.02;
+	lambda[1] = 0.06;
+	lambda[2] = 0.11;
+	lambda[3] = 0.18;
+	lambda[4] = 0.25;
+	lambda[5] = 0.30;
+	lambda[6] = 0.35;
+
 	double *stage2_beta = new double[p];
 	int fold = int (floor(n / 10) + 0.5);
 
@@ -484,7 +489,7 @@ void XY_new::cross_validation(ofstream &myfile, ofstream &lasso, int maxit)
 	double *LG1 = new double[maxit];
 	int min_k = maxit;
 
-	for (int m = 0; m < 5; m++) {
+	for (int m = 0; m < 7; m++) {
 		for (int i = 0; i < maxit; i++) {
 			LG1[i] = 0;
 		}
@@ -506,7 +511,7 @@ void XY_new::cross_validation(ofstream &myfile, ofstream &lasso, int maxit)
 
 			seperate(target, d);
 			double *rep_beta = cdLasso(x_train, y_train, (n1_train + 1), 
-										p, lambda[m] * pow(n_train, 2));
+										p, lambda[m] * (n_train + 1));
 			int *rank = beta_rank(rep_beta, p);
 			for (int j = 0; j < maxit; j++) {
 				for (int j_ = 0; j_ < p; j_++) {
@@ -545,8 +550,8 @@ void XY_new::cross_validation(ofstream &myfile, ofstream &lasso, int maxit)
 
 	myfile << min_LG << "," << min_lambda << "," << min_k << ",";
 	lasso << min_LG_LASSO << "," << min_lamda_LASSO << ",";
-	best_beta = cdLasso(x, y, (n1 + 1), p, min_lambda*pow(n, 2));
-	best_beta_LASSO = cdLasso(x, y, (n1 + 1), p, min_lamda_LASSO*pow(n, 2));
+	best_beta = cdLasso(x, y, (n1 + 1), p, min_lambda*(n1 + 1));
+	best_beta_LASSO = cdLasso(x, y, (n1 + 1), p, min_lamda_LASSO*(n1 + 1));
 	int *rank = beta_rank(best_beta, p);
 	int nlasso = number_nzero(best_beta_LASSO, p);
 	lasso << nlasso << ",";

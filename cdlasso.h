@@ -80,7 +80,7 @@ double key_sort(double *x, double *z, int n) {
 double *cdLasso(double **A, double *B, int n, int p, double lambda) {
 
 	//ofstream myfile;
-	//myfile.open("test1.txt");
+	//myfile.open("test_LG.txt");
 
 	double *r = new double[n];
 	double **x = new double *[p];
@@ -118,12 +118,12 @@ double *cdLasso(double **A, double *B, int n, int p, double lambda) {
 
 	for (int i = 0; i < p; i++)
 	{
-		if (beta[i] > 1e-6)
+		if (beta[i] > 1e-8)
 		{
 			fdd[i] = lambda;
 			zdd[i] = 0;
 		}
-		else if (beta[i] < -1e-6)
+		else if (beta[i] < -1e-8)
 		{
 			fdd[i] = -lambda;
 			zdd[i] = 0;
@@ -137,14 +137,14 @@ double *cdLasso(double **A, double *B, int n, int p, double lambda) {
 
 	for (int i = 0; i < n; i++)
 	{
-		if (r[i] > 1e-6)
+		if (r[i] > 1e-8)
 		{
 			for (int j = 0; j < p; j++)
 			{
 				fdd[j] += -A[i][j];
 			}
 		}
-		else if (r[i] < -1e-6)
+		else if (r[i] < -1e-8)
 		{
 			for (int j = 0; j < p; j++)
 			{
@@ -173,12 +173,14 @@ double *cdLasso(double **A, double *B, int n, int p, double lambda) {
 				k = i;
 			}
 		}
+		
+		//cout << c << endl;
 
 		if (c >= 0) {
 			break;
 		}
 
-		if (abs(beta[k]) > 1e-6) {
+		if (abs(beta[k]) > 1e-8) {
 			for (int i = 0; i < n; i++)
 			{
 				if (A[i][k] != 0)
@@ -203,18 +205,20 @@ double *cdLasso(double **A, double *B, int n, int p, double lambda) {
 		for (int i = 0; i < n; i++)
 		{
 			r_[i] = r[i] + A[i][k] * (beta[k] - beta_);
-			s += abs(r_[i]);
+
+			if (i < (n - 1) && r_[i] < 0)
+				s += -2 * r_[i];
 
 			flag1 = 0;
-			flag1 += (r[i] < -1e-6 && r_[i] < -1e-6) ? 1 : 0;
-			flag1 += (r[i] > 1e-6 && r_[i] > 1e-6) ? 1 : 0;
-			flag1 += (abs(r[i]) <= 1e-6 && abs(r_[i]) <= 1e-6) ? 1 : 0;
+			flag1 += (r[i] < -1e-8 && r_[i] < -1e-8) ? 1 : 0;
+			flag1 += (r[i] > 1e-8 && r_[i] > 1e-8) ? 1 : 0;
+			flag1 += (abs(r[i]) <= 1e-8 && abs(r_[i]) <= 1e-8) ? 1 : 0;
 
 			if (flag1 == 0)
 			{
-				if (r[i] > 1e-6)
+				if (r[i] > 1e-8)
 				{
-					if (r_[i] < -1e-6)
+					if (r_[i] < -1e-8)
 					{
 						for (int j = 0; j < p; j++)
 						{
@@ -230,9 +234,9 @@ double *cdLasso(double **A, double *B, int n, int p, double lambda) {
 						}
 					}
 				}
-				else if (r[i] < -1e-6)
+				else if (r[i] < -1e-8)
 				{
-					if (r_[i] > 1e-6)
+					if (r_[i] > 1e-8)
 					{
 						for (int j = 0; j < p; j++)
 						{
@@ -250,7 +254,7 @@ double *cdLasso(double **A, double *B, int n, int p, double lambda) {
 				}
 				else
 				{
-					if (r_[i] > 1e-6)
+					if (r_[i] > 1e-8)
 					{
 						for (int j = 0; j < p; j++)
 						{
@@ -271,22 +275,24 @@ double *cdLasso(double **A, double *B, int n, int p, double lambda) {
 			r[i] = r_[i];
 		}
 
-		if (abs(beta[k]) <= 1e-6)
-		{
-			if (abs(beta_) > 1e-6)
-			{
-				fdd[k] += lambda;
-				zdd[k] += -lambda;
-			}
+		if (beta[k] > 1e-8) {
+			fdd[k] += -lambda;
+		}
+		else if (beta[k] < -1e-8) {
+			fdd[k] += lambda;
+		}
+		else {
+			zdd[k] += -lambda;
 		}
 
-		if (abs(beta_) <= 1e-6)
-		{
-			if (abs(beta[k]) > 1e-6)
-			{
-				fdd[k] += -lambda;
-				zdd[k] += lambda;
-			}
+		if (beta_ > 1e-8) {
+			fdd[k] += lambda;
+		}
+		else if (beta_ < -1e-8) {
+			fdd[k] += -lambda;
+		}
+		else {
+			zdd[k] += lambda;
 		}
 
 		s1 += lambda * (abs(beta_) - abs(beta[k]));
@@ -309,6 +315,7 @@ double *cdLasso(double **A, double *B, int n, int p, double lambda) {
 	delete[] z;
 	delete[] fdd;
 	delete[] zdd;
+	//myfile.close();
 
 	return beta;
 }
