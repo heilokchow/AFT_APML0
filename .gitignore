@@ -9,3 +9,4 @@ debug_use/
 debug_simulation/
 *.csv
 .Rhistory
+Simulation_VS/
