@@ -24,6 +24,7 @@ int main()
     ofstream out;
 	ofstream myfile;
 	ofstream lasso;
+
 	out.open("real_out.txt", ios_base::app);
 	myfile.open("real_random_cv.txt", ios_base::app);
 	lasso.open("real_random_cv_LASSO.txt", ios_base::app);
@@ -66,9 +67,11 @@ int main()
 	cin >> sr;
 
 	if (sr == 'Y' || sr == 'y') {
-		double lambda;
-		cout << "Please Provide Lambda\n";
-		cin >> lambda;
+		double *y_pro_lasso = new double[n];
+		double *y_pro_apml0 = new double[n];
+		ofstream prognostic_y;
+		prognostic_y.open("pronostic_y.txt", ios_base::app);
+
 		XY_old test0;
 		test0.x = x;
 		test0.y = y;
@@ -77,21 +80,35 @@ int main()
 		test0.p = p;
 		
 		XY_new test00(test0);
+		test00.cross_validation(myfile, lasso, 100);
+		y_pro_lasso = test00.prognostic_index(test00.lasso_lambda, 0);
+		y_pro_apml0 = test00.prognostic_index(test00.apml0_lambda, test00.apml0_k);
+
+		for (int i = 0; i < n; i++) {
+			prognostic_y << y_pro_lasso[i] << ',' << y_pro_apml0[i] << '\n';
+		}
 
 		//double *beta = cdLasso(test00.x, test00.y, test00.n1 + 1, p, lambda*pow(n,2.0));
-		double *beta = cdLasso(x, y, n, p, lambda);
-		for (int i = 0; i < p; i++)
-		{
-			myfile << beta[i] << ",";
-		}
-		myfile << "\n";
+		//double *beta = cdLasso(x, y, n, p, lambda);
+		//for (int i = 0; i < p; i++)
+		//{
+		//	myfile << beta[i] << ",";
+		//}
+		//myfile << "\n";
 
-		delete[] beta;
+		//delete[] beta;
 
 		test00.delete_new();
+		test00.delete_new_beta();
 		test0.delete_old();
+		delete[] x;
+		delete[] y;
+		delete[] status;
+		delete[] y_pro_lasso;
+		delete[] y_pro_apml0;
 		time_t result = std::time(nullptr);
 		myfile << asctime(localtime(&result)) << "\n";
+		prognostic_y.close();
 		myfile.close();
 		lasso.close();
 		out.close();
@@ -142,7 +159,7 @@ int main()
 			test1.p = p;
 
 			XY_new test10(test0), test11(test1);
-			test10.cross_validation(myfile, lasso, 10);
+			test10.cross_validation(myfile, lasso, 100);
 			double *e_beta = test10.best_beta;
 			double *e_beta_LASSO = test10.best_beta_LASSO;
 			c = test11.c_index(e_beta);

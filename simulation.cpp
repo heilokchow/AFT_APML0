@@ -5,6 +5,7 @@
 #include <iomanip>
 #include <random>
 #include <stdio.h>
+#include <stdlib.h>
 #include <math.h>
 #include <ctime>
 #include "cdlasso.h"
@@ -12,28 +13,39 @@
 
 using namespace std;
 
-int main() {
-	int n, p, maxit;
+int main(int argc, char *argv[])
+{
+	int n, p, maxit, rep, s0;
+	double lambda;
 	char np;
 
-	cout << "Use default settings (n = 200, p = 10000)? (Y/N)\n";
-	cin >> np;
-	if (np == 'N' or np == 'n') {
-		cout << "Please provide the sample size:\n";
-		cin >> n;
-		cout << "Please provide the number of parameters (>15):\n";
-		cin >> p;
-	}
-	else {
-		n = 200;
-		p = 10000;
-	}
+	n = atoi(argv[1]);
+	p = atoi(argv[2]);
+	maxit = atoi(argv[3]);
+	rep = atoi(argv[4]);
+	s0 = atoi(argv[5]);
+	lambda = atof(argv[6]);
+	np = argv[7][0];
+
+	//cout << "Please provide the sample size:\n";
+	//cin >> n;
+	//cout << "Please provide the number of parameters (>15):\n";
+	//cin >> p;
+	//cout << "Single Run (Y) or Simulation (N)?\n";
+	//cin >> np;
+	//cout << "Please Provide Lambda\n";
+	//cin >> lambda;
+	//cout << "Please Provide number of Replications\n";
+	//cin >> rep;
+	//cout << "Please Provide Max number of paramters selected (<1000)\n";
+	//cin >> maxit;
+	//cout << "Please Provide Initial Seed\n";
+	//cin >> s0;
 
 	double *beta = new double[p];
 	double t1, t2, t3;
 	ofstream myfile;
 	ofstream lasso;
-	//ofstream check;
 	ofstream time;
 
 	time.open("time.txt");
@@ -46,31 +58,16 @@ int main() {
 		beta[i] = 0;
 	}
 
-	cout << "Single Run (Y) or Simulation (N)?\n";
-	cin >> np;
 	if (np == 'Y' or np == 'y') {
 		myfile.open("single_test.txt");
-		double lambda;
-		cout << "Please Provide Lambda\n";
-		cin >> lambda;
 
 		t1 = clock();
-		XY_old test(n, p, 1, beta);
+		XY_old test(n, p, s0, beta);
 		XY_new test1(test);
 
 		t2 = clock();
 		double *beta1 = cdLasso(test1.x, test1.y, (test1.n1 + 1), p, lambda*(test1.n1 + 1));
-
-		//check.open("check.txt");
-		//for (int i = 0; i < (test1.n1 + 1); i++) {
-		//	check << test1.y[i] << ",";
-		//	for (int j = 0; j < p; j++) {
-		//		check << test1.x[i][j] << ",";
-		//	}
-		//	check << '\n';
-		//}
-		//check.close();
-
+		test.print_old();
 		t3 = clock();
 		double s = test1.LG_all(beta1, lambda*(test1.n1 + 1));
 		myfile << s << "\n";
@@ -90,15 +87,6 @@ int main() {
 		time.close();
 	}
 	else {
-		cout << "Please Provide number of Replications\n";
-		int rep;
-		cin >> rep;
-		cout << "Please Provide Max number of paramters selected (<1000)\n";
-		cin >> maxit;
-		cout << "Please Provide Initial Seed\n";
-		int s0;
-		cin >> s0;
-
 		for (int z = 0; z < rep; z++) {
 			myfile.open("simulation_APML0.txt",ios_base::app);
 			lasso.open("simulation_LASSO.txt",ios_base::app);

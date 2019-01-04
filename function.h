@@ -1,6 +1,7 @@
 #include <iomanip>
 #include <random>
 #include <cstdlib>
+#include <algorithm>
 
 using namespace std;
 
@@ -17,6 +18,7 @@ public:
 	XY_old(int,int,int,double*);
 	~XY_old();
 	void delete_old();
+	void print_old();
 
 	double *y;
 	double **x;
@@ -37,6 +39,7 @@ public:
 	double *get_beta_LASSO();
 	double c_index(double *e_beta);
 	double LG_all(double *beta, double lambda);
+	double *prognostic_index(double lambda, int k);
 
 	double *y;
 	int *y1;
@@ -46,9 +49,15 @@ public:
 	int n;
 	int n1;
 	int p;
+	double *y_ori;
+	double **x_ori;
+	int *status_ori;
 
 	double* best_beta;
 	double* best_beta_LASSO;
+	double lasso_lambda;
+	double apml0_lambda;
+	int apml0_k;
 
 private:
 	void delete_new_cv();
@@ -151,19 +160,34 @@ XY_old::XY_old(int n0, int p0, int seed0, double *beta)
 		}
 	}
 
-	c_range c0 = new_range(y, 0.50, 0.85, n);
-	uniform_real_distribution<double> uni_dist0(c0.low, c0.high);
+	//c_range c0 = new_range(y, 0.50, 0.85, n);
+	//uniform_real_distribution<double> uni_dist0(c0.low, c0.high);
 	
 	for (int i = 0; i < n; i++) {
-		c = uni_dist0(e);
-		if (y[i] > c) {
-			y[i] = c;
+		c = uni_dist(e);
+		if (0.5 < c) {
+			//y[i] = c;
 			status[i] = 0;
 		}
 		else {
 			status[i] = 1;
 		}
 	}	
+}
+
+void XY_old::print_old()
+{
+	std::ofstream check;
+	check.open("check_file.txt");
+
+	for (int i = 0; i < n; i++) {
+		check << y[i] << "," << status[i];
+		for (int j = 0; j < p; j++) {
+			check << "," << x[i][j];
+		}
+		check << '\n';
+	}
+	check.close();
 }
 
 void XY_old::delete_old()
@@ -186,6 +210,18 @@ XY_new::XY_new(XY_old const &A)
 	int k = 0;
 	n = A.n;
 	p = A.p;
+
+	y_ori = new double[n];
+	status_ori = new int[n];
+	x_ori = new double*[n];
+	for (int i = 0; i < n; i++) {
+		x_ori[i] = new double[p];
+		y_ori[i] = A.y[i];
+		status_ori[i] = A.status[i];
+		for (int j = 0; j < p; j++) {
+			x_ori[i][j] = A.x[i][j];
+		}
+	}
 
 	for (int i = 0; i < n; i++) {
 		if (A.status[i] == 1) k++;
@@ -341,11 +377,20 @@ void XY_new::delete_new()
 	for (int i = 0; i < (n1 + 1); i++) {
 		delete[] x[i];
 	}
+
+	for (int i = 0; i < n; i++)
+	{
+		delete[] x_ori[i];
+	}
+
 	delete[] x;
 	delete[] y;
 	delete[] y1;
 	delete[] y2;
 	delete[] status2;
+	delete[] x_ori;
+	delete[] y_ori;
+	delete[] status_ori;
 	cout << "Manual Delete_new is called\n";
 }
 
@@ -548,6 +593,10 @@ void XY_new::cross_validation(ofstream &myfile, ofstream &lasso, int maxit)
 	}
 	delete[] LG1;
 
+	apml0_k = min_k;
+	lasso_lambda = min_lamda_LASSO;
+	apml0_lambda = min_lambda;
+
 	myfile << min_LG << "," << min_lambda << "," << min_k << ",";
 	lasso << min_LG_LASSO << "," << min_lamda_LASSO << ",";
 	best_beta = cdLasso(x, y, (n1 + 1), p, min_lambda*(n1 + 1));
@@ -572,6 +621,72 @@ void XY_new::cross_validation(ofstream &myfile, ofstream &lasso, int maxit)
 	myfile << "\n";
 	lasso << "\n";
 	delete[] rank;
+}
+
+double*XY_new::prognostic_index(double lambda, int k)
+{
+	double *stage2_beta = new double[p];
+	double *y_out = new double[n];
+	int k1 = 0;
+
+	if (k == 0) {
+		k1 = p;
+	}
+	else
+	{
+		k1 = k;
+	}
+
+	int fold = int(floor(n / 10) + 0.5);
+	std::random_device rd;
+	std::mt19937 g(rd());
+	int *key = new int[n];
+	for (int i = 0; i < n; i++) {
+		key[i] = i;
+	}
+	std::shuffle(&key[0], &key[n - 1], g);
+
+	for (int i = 0; i < 10; i++) {
+		int low = fold * i;
+		int high = fold * (i + 1) - 1;
+		if (i == 9) {
+			high = n - 1;
+		}
+
+		int d = high - low + 1;
+		int *target = new int[d];
+		for (int j = 0; j < d; j++) {
+			target[j] = key[low + j];
+		}
+		seperate(target, d);
+		double *rep_beta = cdLasso(x_train, y_train, (n1_train + 1),
+			p, lambda * (n_train + 1));
+		int *rank = beta_rank(rep_beta, p);
+		
+		for (int j_ = 0; j_ < p; j_++) {
+			if (rank[j_] <= k1) {
+				stage2_beta[j_] = rep_beta[j_];
+			}
+			else {
+				stage2_beta[j_] = 0;
+			}
+		}
+
+		for (int j = 0; j < d; j++) {
+			y_out[target[j]] = 0;
+			for (int j_ = 0; j_ < p; j_++) {
+				y_out[target[j]] += x_ori[target[j]][j_] * stage2_beta[j_];
+			}
+		}
+		delete[] rank;
+		delete[] rep_beta;
+		delete[] target;
+		delete_new_cv();
+	}
+
+	delete[] key;
+	delete[] stage2_beta;
+	return y_out;
 }
 
 double*XY_new::get_beta()
