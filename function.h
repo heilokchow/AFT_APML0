@@ -3,6 +3,8 @@
 #include <cstdlib>
 #include <algorithm>
 
+#define USE_IDENTICAL 1
+
 using namespace std;
 
 struct c_range 
@@ -79,6 +81,27 @@ private:
 	int n1_test;
 };
 
+double **cholesky(double **A, int n) {
+	double **L = new double *[n];
+	for (int i = 0; i < n; i++) {
+		L[i] = new double[n];
+		for (int j = 0; j < n; j++)
+			L[i][j] = 0;
+	}
+
+	for (int i = 0; i < n; i++)
+		for (int j = 0; j < (i + 1); j++) {
+			double s = 0;
+			for (int k = 0; k < j; k++)
+				s += L[i][k] * L[j][k];
+			L[i][j] = (i == j) ?
+				sqrt(A[i][i] - s) :
+				(1.0 / L[j][j] * (A[i][j] - s));
+		}
+
+	return L;
+}
+
 void swap0(double &x, double &y)
 {
 	double temp = x;
@@ -151,6 +174,7 @@ XY_old::XY_old(int n0, int p0, int seed0, double *beta)
 	normal_distribution<double> normal_dist(0.0, 1.0);
 	uniform_real_distribution<double> uni_dist(0.0, 1.0);
 
+#if USE_IDENTICAL == 1
 	for (int i = 0; i < n; i++) {
 		x[i] = new double[p];
 		y[i] = normal_dist(e);
@@ -159,6 +183,49 @@ XY_old::XY_old(int n0, int p0, int seed0, double *beta)
 			y[i] += x[i][j] * beta[j];
 		}
 	}
+#else
+	double **CV = new double *[50];
+	for (int i = 0; i < 50; i++) {
+		CV[i] = new double[50];
+		for (int j = 0; j < 50; j++) {
+			if (i == j)
+				CV[i][j] = 1.0;
+			else
+				CV[i][j] = 0.5;
+		}
+	}
+
+	double **KCV = cholesky(CV, 50);
+	double *xx = new double[p];
+	for (int i = 0; i < n; i++) {
+		x[i] = new double[p];
+		y[i] = normal_dist(e);
+
+		for (int j = 0; j < p; j++) {
+			xx[j] = normal_dist(e);
+			x[i][j] = 0;	
+		}
+
+		for (int j = 0; j < 50; j++) {
+			for (int k = 0; k < 50; k++)
+				x[i][j] += KCV[j][k] * xx[k];
+		}
+
+		for (int j = 50; j < p; j++)
+			x[i][j] = xx[j];
+
+		for (int j = 0; j < p; j++)
+			y[i] += x[i][j] * beta[j];
+	}
+
+	delete[] xx;
+	for (int i = 0; i < 50; i++) {
+		delete[] KCV[i];
+		delete[] CV[i];
+	}
+	delete[] KCV;
+	delete[] CV;
+#endif // USE_IDENTICAL == 1
 
 	//c_range c0 = new_range(y, 0.50, 0.85, n);
 	//uniform_real_distribution<double> uni_dist0(c0.low, c0.high);
