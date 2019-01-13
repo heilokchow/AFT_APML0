@@ -13,34 +13,42 @@
 
 using namespace std;
 
+int n = 200;
+int p = 10000;
+int maxit = 50;
+int rep = 1;
+int s0 = 1;
+double lambda = 0.01;
+char np = 'Y';
+
 int main(int argc, char *argv[])
 {
-	int n, p, maxit, rep, s0;
-	double lambda;
-	char np;
+//	int n, p, maxit, rep, s0;
+//	double lambda;
+//	char np;
 
-	n = atoi(argv[1]);
-	p = atoi(argv[2]);
-	maxit = atoi(argv[3]);
-	rep = atoi(argv[4]);
-	s0 = atoi(argv[5]);
-	lambda = atof(argv[6]);
-	np = argv[7][0];
+//	n = atoi(argv[1]);
+//	p = atoi(argv[2]);
+//	maxit = atoi(argv[3]);
+//	rep = atoi(argv[4]);
+//	s0 = atoi(argv[5]);
+//	lambda = atof(argv[6]);
+//	np = argv[7][0];
 
-	//cout << "Please provide the sample size:\n";
-	//cin >> n;
-	//cout << "Please provide the number of parameters (>15):\n";
-	//cin >> p;
-	//cout << "Single Run (Y) or Simulation (N)?\n";
-	//cin >> np;
-	//cout << "Please Provide Lambda\n";
-	//cin >> lambda;
-	//cout << "Please Provide number of Replications\n";
-	//cin >> rep;
-	//cout << "Please Provide Max number of paramters selected (<1000)\n";
-	//cin >> maxit;
-	//cout << "Please Provide Initial Seed\n";
-	//cin >> s0;
+//	cout << "Please provide the sample size:\n";
+//	cin >> n;
+//	cout << "Please provide the number of parameters (>15):\n";
+//	cin >> p;
+//	cout << "Single Run (Y) or Simulation (N)?\n";
+//	cin >> np;
+//	cout << "Please Provide Lambda\n";
+//	cin >> lambda;
+//	cout << "Please Provide number of Replications\n";
+//	cin >> rep;
+//	cout << "Please Provide Max number of paramters selected (<1000)\n";
+//	cin >> maxit;
+//	cout << "Please Provide Initial Seed\n";
+//	cin >> s0;
 
 	double *beta = new double[p];
 	double t1, t2, t3;
@@ -66,23 +74,23 @@ int main(int argc, char *argv[])
 		XY_new test1(test);
 
 		t2 = clock();
-		double *beta1 = cdLasso(test1.x, test1.y, (test1.n1 + 1), p, lambda*(test1.n1 + 1));
+//		double *beta1 = cdLasso(test1.x, test1.y, (test1.n1 + 1), p, lambda*(test1.n1 + 1));
 		test.print_old();
 
 		cv_path(test1, 3);
 
 		t3 = clock();
-		double s = test1.LG_all(beta1, lambda*(test1.n1 + 1));
-		myfile << s << "\n";
-		for (int i = 0; i < p; i++) {
-			myfile << beta1[i] << "\n";
-		}
+//		double s = test1.LG_all(beta1, lambda*(test1.n1 + 1));
+//		myfile << s << "\n";
+//		for (int i = 0; i < p; i++) {
+//			myfile << beta1[i] << "\n";
+//		}
 		myfile.close();
 
 		test.delete_old();
 		test1.delete_new();
 		delete[] beta;
-		delete[] beta1;
+//		delete[] beta1;
 
 		time << (t2 - t1) / (double)CLOCKS_PER_SEC << endl;
 		time << (t3 - t2) / (double)CLOCKS_PER_SEC << endl;

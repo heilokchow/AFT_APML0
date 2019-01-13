@@ -8,13 +8,13 @@
 
 using namespace std;
 
-struct c_range 
+struct c_range
 {
 	double low;
 	double high;
 };
 
-class XY_old 
+class XY_old
 {
 public:
 	XY_old();
@@ -30,7 +30,7 @@ public:
 	int p;
 };
 
-class XY_new 
+class XY_new
 {
 public:
 	XY_new();
@@ -91,10 +91,8 @@ struct lasso_path
 	int k;
 	~lasso_path()
 	{
-		if (!beta) {
-			delete[] beta;
-			cout << "Thread_beta deleted" << endl;
-		}
+//        delete[] beta; // Not used
+        cout << "Thread_beta deleted" << endl;
 	}
 };
 
@@ -152,7 +150,7 @@ void quickSort0(double *z, int low, int high)
 	}
 }
 
-c_range new_range(double *y, double low, double high, int n) 
+c_range new_range(double *y, double low, double high, int n)
 {
 	double *z = new double[n];
 	for (int i = 0; i < n; i++) {
@@ -182,7 +180,7 @@ XY_new::XY_new()
 	cout << "XY_new Constructed\n";
 }
 
-XY_old::XY_old(int n0, int p0, int seed0, double *beta) 
+XY_old::XY_old(int n0, int p0, int seed0, double *beta)
 {
 	n = n0;
 	p = p0;
@@ -225,7 +223,7 @@ XY_old::XY_old(int n0, int p0, int seed0, double *beta)
 
 		for (int j = 0; j < p; j++) {
 			xx[j] = normal_dist(e);
-			x[i][j] = 0;	
+			x[i][j] = 0;
 		}
 
 		for (int j = 0; j < 50; j++) {
@@ -253,7 +251,7 @@ XY_old::XY_old(int n0, int p0, int seed0, double *beta)
 
 	//c_range c0 = new_range(y, 0.50, 0.85, n);
 	//uniform_real_distribution<double> uni_dist0(c0.low, c0.high);
-	
+
 	for (int i = 0; i < n; i++) {
 		c = uni_dist(e);
 		if (0.5 < c) {
@@ -263,7 +261,7 @@ XY_old::XY_old(int n0, int p0, int seed0, double *beta)
 		else {
 			status[i] = 1;
 		}
-	}	
+	}
 }
 
 void XY_old::print_old()
@@ -296,7 +294,7 @@ XY_old::~XY_old() {
 	cout << "Destructor_old is called\n";
 }
 
-XY_new::XY_new(XY_old const &A) 
+XY_new::XY_new(XY_old const &A)
 {
 	int k = 0;
 	n = A.n;
@@ -423,7 +421,7 @@ void XY_new::seperate(int *target, int k) {
 			y2_train[s1] = y2[i];
 			x_train[s1] = x[i];
 			s1++;
-		}		
+		}
 		else {
 			y_test[s2] = y[i];
 			y1_test[s2] = y1[i];
@@ -431,7 +429,7 @@ void XY_new::seperate(int *target, int k) {
 			x_test[s2] = x[i];
 			s2++;
 		}
-		
+
 	}
 
 	x_test[s2] = new double[p];
@@ -507,7 +505,7 @@ void XY_new::delete_new_cv()
 	cout << "Manual Delete_new_cv is called\n";
 }
 
-double XY_new::LG(double *beta) 
+double XY_new::LG(double *beta)
 {
 	double s = 0, r = 0;
 	for (int i = 0; i < n1; i++) {
@@ -520,7 +518,7 @@ double XY_new::LG(double *beta)
 			s += -r;
 		}
 	}
-	
+
 	double s_train = 0;
 	for (int i = 0; i < n1_train; i++) {
 		r = y_train[i];
@@ -532,12 +530,12 @@ double XY_new::LG(double *beta)
 			s_train += -r;
 		}
 	}
-	
+
 	double ss = s/n - s_train/n_train;
 	return ss;
 }
 
-int find_rank(double *abs_beta, double v, int low, int high) 
+int find_rank(double *abs_beta, double v, int low, int high)
 {
 	int rank;
 	if (low == high) {
@@ -569,7 +567,7 @@ int find_rank(double *abs_beta, double v, int low, int high)
 	return rank;
 }
 
-int *beta_rank(double *beta, int p) 
+int *beta_rank(double *beta, int p)
 {
 	int *rank = new int[p];
 	double *beta_copy = new double[p];
@@ -646,7 +644,7 @@ void XY_new::cross_validation(ofstream &myfile, ofstream &lasso, int maxit)
 			}
 
 			seperate(target, d);
-			double *rep_beta = cdLasso(x_train, y_train, (n1_train + 1), 
+			double *rep_beta = cdLasso(x_train, y_train, (n1_train + 1),
 										p, lambda[m] * (n_train + 1));
 			int *rank = beta_rank(rep_beta, p);
 			for (int j = 0; j < maxit; j++) {
@@ -753,7 +751,7 @@ double*XY_new::prognostic_index(double lambda, int k)
 		double *rep_beta = cdLasso(x_train, y_train, (n1_train + 1),
 			p, lambda * (n_train + 1));
 		int *rank = beta_rank(rep_beta, p);
-		
+
 		for (int j_ = 0; j_ < p; j_++) {
 			if (rank[j_] <= k1) {
 				stage2_beta[j_] = rep_beta[j_];
@@ -797,7 +795,7 @@ double XY_new::c_index(double *e_beta)
 	double y0;
 	for (int i = 0; i < n1; i++) {
 		y0 = 0;
-		
+
 		for (int j = 0; j < p; j++)
 			y0 += x[i][j] * e_beta[j];
 
@@ -807,7 +805,7 @@ double XY_new::c_index(double *e_beta)
 			c2++;
 		}
 	}
-	
+
 	double c1 = c0 / c2;
 	return c1;
 }
@@ -829,12 +827,12 @@ void cv_path(const XY_new &new_class, int k)
 {
 	double lambda[50];
 	for (int i = 0; i < 50; i++)
-		lambda[i] = (i + 1)*0.01;
+		lambda[49 - i] = (i + 1)*0.001;
 
 	lasso_path *path = new lasso_path[k];
 	for (int i = 0; i < k; i++) {
 		path[i].lambda = lambda[i];
-		path[i].model = new_class;	
+		path[i].model = new_class;
 		cout << path[i].lambda << endl;
 	}
 
@@ -852,10 +850,54 @@ void cv_path(const XY_new &new_class, int k)
 		pthread_join(tid[i], (void**) &temp);
 	}
 
-	for (int i = 0; i < k; i++)
-	{
-		cout << "Thread_beta: " << path[i].beta[0] << endl;
-	}
+
+//	for (int i = 0; i < k; i++)
+//	{
+//		cout << "Thread_beta: " << sizeof(path[i]) << endl;
+//		delete[] path[i].beta;
+//	}
+
+    std::unique_ptr<int[]> k_size = std::make_unique<int[]>(k);
+    std::unique_ptr<int[]> k_flag = std::make_unique<int[]>(k);
+    for (int i = 0; i < k; i++) {
+        k_size[i] = number_nzero(path[i].beta, new_class.p);
+        std::cout << k_size[i] << std::endl;
+    }
+
+    int sum = 0;
+    int c = 0;
+    for (int i = 0; i < k - 1; i++) {
+        c = 0;
+        for (int j = i + 1; j < k; j++) {
+            if (k_size[j] == k_size[i])
+            {
+                c++;
+                break;
+            }
+        }
+        if (c == 0) {
+            sum++;
+            k_flag[i] = 1;
+        }
+    }
+    sum++;
+    k_flag[k - 1] = 1;
+
+    std::unique_ptr<int[]> k_sum = std::make_unique<int[]>(sum);
+    std::unique_ptr<int[]> lam_sum = std::make_unique<int[]>(sum);
+    std::unique_ptr<double*[]> beta_sum = std::make_unique<double*[]>(sum);
+    int q = 0;
+    for (int i = 0; i < k; i++) {
+        if (k_flag[i] == 1) {
+            k_sum[q] = k_size[i];
+            lam_sum[q] = lambda[i];
+            beta_sum[q] = path[i].beta;
+            std::cout << "k: " << k_size[i] << " lambda: " << lambda[i] << " beta: " << beta_sum[q][0] << std::endl;
+        }
+        else {
+            delete[] path[i].beta;
+        }
+    }
 
 	delete[] path;
 }
