@@ -68,6 +68,9 @@ int main(int argc, char *argv[])
 		t2 = clock();
 		double *beta1 = cdLasso(test1.x, test1.y, (test1.n1 + 1), p, lambda*(test1.n1 + 1));
 		test.print_old();
+
+		cv_path(test1, 3);
+
 		t3 = clock();
 		double s = test1.LG_all(beta1, lambda*(test1.n1 + 1));
 		myfile << s << "\n";

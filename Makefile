@@ -2,7 +2,7 @@
 n = 200
 
 # Dimension
-p = 10000
+p = 100
 
 # Number of paramerters selected by stage 2 of APML0
 maxit = 50
@@ -21,10 +21,10 @@ np = Y
 
 .PHONY: run
 test1: simulation.o
-	g++ simulation.o -o test1 -O2
+	g++ simulation.o -o test1 -lpthread -O2
 
 simulation.o: simulation.cpp cdlasso.h function.h
-	g++ -c simulation.cpp -std=c++11 -O2
+	g++ -c simulation.cpp -std=c++11 -lpthread -O2
 
 real: real_data.o
 	g++ real_data.o -o real -O2

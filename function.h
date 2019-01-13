@@ -2,6 +2,7 @@
 #include <random>
 #include <cstdlib>
 #include <algorithm>
+#include <pthread.h>
 
 #define USE_IDENTICAL 1
 
@@ -32,6 +33,7 @@ public:
 class XY_new 
 {
 public:
+	XY_new();
 	XY_new(XY_old const &A);
 	~XY_new();
 	void delete_new();
@@ -79,6 +81,21 @@ private:
 	double **x_test;
 	int n_test;
 	int n1_test;
+};
+
+struct lasso_path
+{
+	double lambda;
+	XY_new model;
+	double *beta = NULL;
+	int k;
+	~lasso_path()
+	{
+		if (!beta) {
+			delete[] beta;
+			cout << "Thread_beta deleted" << endl;
+		}
+	}
 };
 
 double **cholesky(double **A, int n) {
@@ -160,6 +177,11 @@ XY_old::XY_old()
 	cout << "XY_old Constructed\n";
 }
 
+XY_new::XY_new()
+{
+	cout << "XY_new Constructed\n";
+}
+
 XY_old::XY_old(int n0, int p0, int seed0, double *beta) 
 {
 	n = n0;
@@ -226,6 +248,8 @@ XY_old::XY_old(int n0, int p0, int seed0, double *beta)
 	delete[] KCV;
 	delete[] CV;
 #endif // USE_IDENTICAL == 1
+
+	//OLD CENSORE DETERMINATION METHOD
 
 	//c_range c0 = new_range(y, 0.50, 0.85, n);
 	//uniform_real_distribution<double> uni_dist0(c0.low, c0.high);
@@ -786,4 +810,52 @@ double XY_new::c_index(double *e_beta)
 	
 	double c1 = c0 / c2;
 	return c1;
+}
+
+void *lasso_run(void *arg)
+{
+	lasso_path *m = (lasso_path*)arg;
+	m->k = 0;
+	m->beta = cdLasso(m->model.x, m->model.y, (m->model.n1 + 1), m->model.p, m->lambda*(m->model.n1 + 1));
+	for (int i = 0; i < m->model.p; i++) {
+		if (abs(m->beta[i]) > 1e-6)
+			m->k++;
+	}
+	cout << "beta: " << m->beta[0] << endl;
+	pthread_exit(m);
+}
+
+void cv_path(const XY_new &new_class, int k)
+{
+	double lambda[50];
+	for (int i = 0; i < 50; i++)
+		lambda[i] = (i + 1)*0.01;
+
+	lasso_path *path = new lasso_path[k];
+	for (int i = 0; i < k; i++) {
+		path[i].lambda = lambda[i];
+		path[i].model = new_class;	
+		cout << path[i].lambda << endl;
+	}
+
+	pthread_t tid[k];
+	pthread_attr_t attr[k];
+	for (int i = 0; i < k; i++) {
+		cout << path[i].lambda << endl;
+		pthread_attr_init(&attr[i]);
+		pthread_create(&tid[i], &attr[i], lasso_run, &path[i]);
+	}
+
+	lasso_path* temp;
+	for (int i = 0; i < k; i++) {
+		temp = &path[i];
+		pthread_join(tid[i], (void**) &temp);
+	}
+
+	for (int i = 0; i < k; i++)
+	{
+		cout << "Thread_beta: " << path[i].beta[0] << endl;
+	}
+
+	delete[] path;
 }
