@@ -58,11 +58,25 @@ int main(int argc, char *argv[])
 
 	time.open("time.txt");
 
+//    ORIGINAL TESTING
+//	for (int i = 0; i < 15; i++) {
+//		beta[i] = pow(-1.0, i) * 2 * exp(-i / 15.0);
+//	}
+
+//	for (int i = 15; i < p; i++) {
+//		beta[i] = 0;
+//	}
+
+//    ROC CURVE SETTING
 	for (int i = 0; i < 15; i++) {
-		beta[i] = pow(-1.0, i) * 2 * exp(-i / 15.0);
+		beta[i] = pow(-1.0, i)* 2 * std::exp(-i / 15.0);
 	}
 
-	for (int i = 15; i < p; i++) {
+    for (int i = 15; i < 100; i++) {
+        beta[i] = 1;
+    }
+
+    for (int i = 100; i < p; i++) {
 		beta[i] = 0;
 	}
 

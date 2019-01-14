@@ -3,6 +3,7 @@
 #include <cstdlib>
 #include <algorithm>
 #include <pthread.h>
+#include <memory>
 
 #define USE_IDENTICAL 1
 
@@ -63,7 +64,6 @@ public:
 	double apml0_lambda;
 	int apml0_k;
 
-private:
 	void delete_new_cv();
 	void seperate(int *target, int k);
 	double LG(double *beta);
@@ -91,8 +91,28 @@ struct lasso_path
 	int k;
 	~lasso_path()
 	{
-//        delete[] beta; // Not used
+//      delete[] beta; // Not used
         cout << "Thread_beta deleted" << endl;
+	}
+};
+
+struct cv_lasso_path
+{
+	double lambda;
+	XY_new model;
+	double *beta = NULL;
+	double **beta_all = NULL;
+	double *LG;
+	int *k;
+	int sum;
+	~cv_lasso_path()
+	{
+//      delete[] beta; // Not used
+        for (int i = 0; i < sum; i++) {
+            delete[] beta_all[i];
+        }
+        delete[] beta_all;
+        cout << "Thread_beta_cv deleted" << endl;
 	}
 };
 
@@ -823,11 +843,74 @@ void *lasso_run(void *arg)
 	pthread_exit(m);
 }
 
+void *cv_lasso_run(void *arg)
+{
+    cv_lasso_path *m = (cv_lasso_path*)arg;
+
+    m->LG = new double[m->sum];
+    for (int i = 0; i < m->sum; i++) {
+        m->LG[i] = 0;
+    }
+    int fold = int (floor(m->model.n / 10) + 0.5);
+
+    double *stage2_beta = new double[m->model.p];
+    for (int i = 0; i < 10; i++) {
+        int low = fold * i;
+        int high = fold * (i + 1) - 1;
+        if (i == 9) {
+            high = m->model.n - 1;
+        }
+
+        int d = high - low + 1;
+        int *target = new int[d];
+        for (int j = 0; j < d; j++) {
+            target[j] = low + j;
+        }
+
+        m->model.seperate(target, d);
+        double *rep_beta = cdLasso(m->model.x_train, m->model.y_train, (m->model.n1_train + 1),
+										m->model.p, m->lambda* (m->model.n_train + 1));
+			int *rank = beta_rank(rep_beta, m->model.p);
+			for (int j = 0; j < m->sum; j++) {
+				for (int j_ = 0; j_ < m->model.p; j_++) {
+					if (rank[j_] <= m->k[j]) {
+						stage2_beta[j_] = rep_beta[j_];
+					}
+					else {
+						stage2_beta[j_] = 0;
+					}
+				}
+				m->LG[j] += m->model.LG(stage2_beta);
+			}
+
+			delete[] rank;
+			delete[] rep_beta;
+			delete[] target;
+			m->model.delete_new_cv();
+		}
+
+        int *rank = beta_rank(m->beta, m->model.p);
+        m->beta_all = new double*[m->sum];
+        for (int j = 0; j < m->sum; j++) {
+            m->beta_all[j] = new double[m->model.p];
+            for (int j_ = 0; j_ < m->model.p; j_++) {
+                if (rank[j_] <= m->k[j]) {
+                    m->beta_all[j][j_] = m->beta[j_];
+                }
+                else {
+                    m->beta_all[j][j_] = 0;
+                }
+            }
+        }
+        delete[] rank;
+        pthread_exit(m);
+}
+
 void cv_path(const XY_new &new_class, int k)
 {
 	double lambda[50];
 	for (int i = 0; i < 50; i++)
-		lambda[49 - i] = (i + 1)*0.001;
+		lambda[49 - i] = (i + 1)*0.01;
 
 	lasso_path *path = new lasso_path[k];
 	for (int i = 0; i < k; i++) {
@@ -857,8 +940,14 @@ void cv_path(const XY_new &new_class, int k)
 //		delete[] path[i].beta;
 //	}
 
-    std::unique_ptr<int[]> k_size = std::make_unique<int[]>(k);
-    std::unique_ptr<int[]> k_flag = std::make_unique<int[]>(k);
+//  C++14
+//  std::unique_ptr<int[]> k_size = std::make_unique<int[]>(k);
+//  std::unique_ptr<int[]> k_flag = std::make_unique<int[]>(k);
+
+//  C++11
+    std::unique_ptr<int[]> k_size(new int[k]);
+    std::unique_ptr<int[]> k_flag(new int[k]);
+
     for (int i = 0; i < k; i++) {
         k_size[i] = number_nzero(path[i].beta, new_class.p);
         std::cout << k_size[i] << std::endl;
@@ -883,16 +972,25 @@ void cv_path(const XY_new &new_class, int k)
     sum++;
     k_flag[k - 1] = 1;
 
-    std::unique_ptr<int[]> k_sum = std::make_unique<int[]>(sum);
-    std::unique_ptr<int[]> lam_sum = std::make_unique<int[]>(sum);
-    std::unique_ptr<double*[]> beta_sum = std::make_unique<double*[]>(sum);
+//  C++14
+//  std::unique_ptr<int[]> k_sum = std::make_unique<int[]>(sum);
+//  std::unique_ptr<double[]> lam_sum = std::make_unique<double[]>(sum);
+//  std::unique_ptr<double*[]> beta_sum = std::make_unique<double*[]>(sum);
+
+//  C++11
+    std::unique_ptr<int[]> k_sum(new int[sum]);
+    std::unique_ptr<double[]> lam_sum(new double[sum]);
+    std::unique_ptr<double*[]> beta_sum(new double*[sum]);
+
     int q = 0;
     for (int i = 0; i < k; i++) {
         if (k_flag[i] == 1) {
             k_sum[q] = k_size[i];
             lam_sum[q] = lambda[i];
             beta_sum[q] = path[i].beta;
-            std::cout << "k: " << k_size[i] << " lambda: " << lambda[i] << " beta: " << beta_sum[q][0] << std::endl;
+            std::cout << "k: " << k_size[i] << " lambda: " << lambda[i] << " beta: " << path[i].beta[0] << std::endl;
+            std::cout << "k: " << k_sum[q] << " lambda: " << lam_sum[q] << " beta: " << beta_sum[q][0] << std::endl;
+            q++;
         }
         else {
             delete[] path[i].beta;
@@ -900,4 +998,99 @@ void cv_path(const XY_new &new_class, int k)
     }
 
 	delete[] path;
+
+//  CROSS VALIDDATION FOR APML0 UNDER DIFFERENT PENALTY LEVEL
+    cv_lasso_path *cv_path = new cv_lasso_path[sum];
+    int *k_sum_ = new int[sum];
+    for (int i = 0; i < sum; i++) {
+        k_sum_[i] = k_sum[i];
+    }
+
+	for (int i = 0; i < sum; i++) {
+		cv_path[i].lambda = lam_sum[i];
+		cv_path[i].beta = beta_sum[i];
+        cv_path[i].k = k_sum_;
+		cv_path[i].model = new_class;
+		cv_path[i].sum = sum;
+		std::cout << "cv_lambda: " << cv_path[i].lambda << std::endl;
+	}
+
+	pthread_t tid1[sum];
+	pthread_attr_t attr1[sum];
+	for (int i = 0; i < sum; i++) {
+		std::cout << "cv_lambda: " << cv_path[i].lambda << std::endl;
+		pthread_attr_init(&attr1[i]);
+		pthread_create(&tid1[i], &attr1[i], cv_lasso_run, &cv_path[i]);
+	}
+
+	cv_lasso_path* temp1;
+	for (int i = 0; i < sum; i++) {
+		temp1 = &cv_path[i];
+		pthread_join(tid1[i], (void**) &temp1);
+	}
+
+    for (int i = 0; i < sum; i++) {
+        for (int j = 0; j < sum; j++) {
+            std::cout << cv_path[i].LG[j] << ' ';
+        }
+        std::cout << std::endl;
+    }
+
+//  OUTPUT RESULT TO FILE
+    std::ofstream wp_lasso;
+    std::ofstream wp_apml0;
+
+    wp_lasso.open("wp_lasso.txt");
+    wp_apml0.open("wp_apml0.txt");
+
+    double** lasso_t = new double*[sum];
+    double** apml0_t = new double*[sum];
+    double* lasso_LG = new double[sum];
+    double* apml0_LG = new double[sum];
+
+    for (int i = 0; i < sum; i++) {
+        lasso_t[i] = new double[new_class.p];
+        apml0_t[i] = new double[new_class.p];
+        lasso_LG[i] = cv_path[i].LG[i];
+        apml0_LG[i] = cv_path[i].LG[i];
+
+        for (int z = 0; z < new_class.p; z++) {
+            lasso_t[i][z] = cv_path[i].beta_all[i][z];
+            apml0_t[i][z] = cv_path[i].beta_all[i][z];
+        }
+
+        for (int j = i; j < sum; j++) {
+            if(cv_path[j].LG[i] < apml0_LG[i]) {
+                apml0_LG[i] = cv_path[j].LG[i];
+                for(int z = 0; z < new_class.p; z++) {
+                    apml0_t[i][z] = cv_path[j].beta_all[i][z];
+                }
+            }
+        }
+    }
+
+    for (int i = 0; i < sum; i++) {
+        wp_lasso << lasso_LG[i] << ',' << k_sum[i] << ',' << lam_sum[i] << ',';
+        wp_apml0<< apml0_LG[i] << ',' << k_sum[i] << ',' << lam_sum[i] << ',';
+        for (int j = 0; j < new_class.p; j++) {
+            wp_lasso << lasso_t[i][j] << ',';
+            wp_apml0<< apml0_t[i][j] << ',';
+        }
+        wp_lasso << std::endl;
+        wp_apml0 << std::endl;
+    }
+
+    for (int i = 0; i < sum; i++) {
+        delete[] lasso_t[i];
+        delete[] apml0_t[i];
+        delete[] beta_sum[i];
+    }
+    delete[] lasso_t;
+    delete[] apml0_t;
+    delete[] lasso_LG;
+    delete[] apml0_LG;
+    delete[] cv_path;
+    wp_lasso.close();
+    wp_apml0.close();
+
 }

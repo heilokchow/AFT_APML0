@@ -4,6 +4,8 @@
 #include <stdio.h>
 #include <math.h>
 
+#define ITERATOR 10000
+
 using namespace std;
 
 void swap_(double &x, double &y) {
@@ -83,7 +85,8 @@ double *cdLasso(double **A, double *B, int n, int p, double lambda) {
 	//myfile.open("test_LG.txt");
 
 	double *r = new double[n];
-	double **x = new double *[p];
+//	double **x = new double *[p];
+    double *x = new double[n + 1];
 	double s = 0, s1 = 0;
 	double *z = new double[n + 1];
 	double *beta = new double[p];
@@ -95,15 +98,17 @@ double *cdLasso(double **A, double *B, int n, int p, double lambda) {
 	double *r_ = new double[n];
 	int flag1 = 0;
 
+    x[n] = lambda;
 	for (int i = 0; i < p; i++)
 	{
-		x[i] = new double[n + 1];
+//      CACHE OTIMIZTION WITH MEMORY TRADE OFF
+//		x[i] = new double[n + 1];
 		for (int j = 0; j < n; j++)
 		{
-			x[i][j] = abs(A[j][i]);
+//			x[i][j] = abs(A[j][i]);
 			r[j] = B[j];
 		}
-		x[i][n] = lambda;
+//		x[i][n] = lambda;
 		beta[i] = 0;
 	}
 
@@ -160,7 +165,7 @@ double *cdLasso(double **A, double *B, int n, int p, double lambda) {
 		}
 	}
 
-	while (flag < 1000)
+	while (flag < ITERATOR)
 	{
 		c = 10;
 		k = 0;
@@ -173,7 +178,7 @@ double *cdLasso(double **A, double *B, int n, int p, double lambda) {
 				k = i;
 			}
 		}
-		
+
 		//cout << c << endl;
 
 		if (c >= 0) {
@@ -199,7 +204,11 @@ double *cdLasso(double **A, double *B, int n, int p, double lambda) {
 			}
 		}
 
-		beta_ = key_sort(x[k], z, n);
+        for (int j = 0; j < n; j++)
+		{
+			x[j] = abs(A[j][k]);
+		}
+		beta_ = key_sort(x, z, n);
 
 		s = 0;
 		for (int i = 0; i < n; i++)
@@ -304,10 +313,10 @@ double *cdLasso(double **A, double *B, int n, int p, double lambda) {
 		flag++;
 	}
 
-	for (int i = 0; i < p; i++)
-	{
-		delete[] x[i];
-	}
+//	for (int i = 0; i < p; i++)
+//	{
+//		delete[] x[i];
+//	}
 
 	delete[] x;
 	delete[] r;
