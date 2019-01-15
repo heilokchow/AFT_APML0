@@ -4,6 +4,8 @@
 #include <algorithm>
 #include <pthread.h>
 #include <memory>
+#include <string>
+#include <cstring>
 
 #define USE_IDENTICAL 1
 
@@ -45,6 +47,7 @@ public:
 	double c_index(double *e_beta);
 	double LG_all(double *beta, double lambda);
 	double *prognostic_index(double lambda, int k);
+	friend void *cv_lasso_run(void *arg);
 
 	double *y;
 	int *y1;
@@ -54,6 +57,8 @@ public:
 	int n;
 	int n1;
 	int p;
+
+private:
 	double *y_ori;
 	double **x_ori;
 	int *status_ori;
@@ -115,6 +120,119 @@ struct cv_lasso_path
         cout << "Thread_beta_cv deleted" << endl;
 	}
 };
+
+struct ALPath
+{
+    int path[43] = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,
+                       20,25,30,35,40,45,50,60,70,80,90,100,120,140,160,
+                       180,200,250,300,350,400,450,500};
+    double lambda[43] = {0.0};
+    double* beta[43];
+    double cv[43] = {0.0};
+    int ct[43] = {0};
+    int p;
+
+#ifdef TRUE_PARAMETER
+    double TP[43] = {0.0};
+    double FP[43] = {0.0};
+#endif // TRUE_PARAMETER
+
+    ALPath(int model_p)
+    {
+        p = model_p;
+        for (int i = 0; i < 43; i++) {
+            beta[i] = new double[p];
+            for (int j = 0; j < p; j++) {
+                beta[i][j] = 0;
+            }
+        }
+    }
+    ~ALPath()
+    {
+        for (int i = 0; i < 43; i++) {
+            delete[] beta[i];
+        }
+        std::cout << "ALPath deleted\n";
+    }
+
+    void ALprint(std::string b)
+    {
+        std::ofstream AL_path;
+        std::string x = "AL_path" + b + ".txt";
+        char cstr[x.size() + 1];
+        strcpy(cstr, x.c_str());
+        AL_path.open(cstr);
+
+        for (int i = 0; i < 43; i++) {
+            AL_path << path[i] << ',' << cv[i] << ',' << lambda[i] << ',';
+
+#ifdef TRUE_PARAMETER
+            AL_path << TP[i] << ',' << FP[i] << ',';
+#endif // TRUE_PARAMETER
+
+            for (int j = 0; j < p; j++) {
+                AL_path << beta[i][j] << ',';
+            }
+            AL_path << '\n';
+        }
+        AL_path.close();
+    }
+
+    void ALadd(int* k, double* lam, int sum, double** beta_path, double* LG_path);
+};
+
+void ALPath::ALadd(int* k, double* lam, int sum, double** beta_path, double* LG_path)
+{
+    int ini = 0;
+    for (int i = 0; i < 43; i++) {
+        if (k[ini] <= path[i]) {
+            int flag = 0;
+            for (int j = ini; j < sum; j++) {
+                if(k[j] > path[i]) {
+                    j--;
+                    ini = j;
+                    flag++;
+                    ct[i]++;
+                    lambda[i] = (lam[j] + lambda[i] * (ct[i] - 1))/ ct[i];
+                    cv[i] = (LG_path[j] + cv[i] * (ct[i] - 1))/ ct[i];
+#ifdef TRUE_PARAMETER
+                    int TR = 0;
+                    for (int z = 0; z < TRUE_PARAMETER; z++) {
+                        if (std::abs(beta_path[j][z]) > 1e-6)
+                            TR++;
+                    }
+                    TP[i] = (TR + TP[i] * (ct[i] - 1))/ ct[i];
+                    FP[i] = (k[j] - TR + FP[i] * (ct[i] - 1))/ ct[i];
+#endif // TRUE_PARAMETER
+                    for (int z = 0; z < p; z++) {
+                        beta[i][z] = (beta_path[j][z] + beta[i][z] * (ct[i] - 1))/ ct[i];
+                    }
+                    break;
+                }
+            }
+
+            if (flag == 0) {
+                int j = sum - 1;
+                ini = j;
+                ct[i]++;
+                lambda[i] = (lam[j] + lambda[i] * (ct[i] - 1))/ ct[i];
+                cv[i] = (LG_path[j] + cv[i] * (ct[i] - 1))/ ct[i];
+#ifdef TRUE_PARAMETER
+                int TR = 0;
+                for (int z = 0; z < TRUE_PARAMETER; z++) {
+                    if (std::abs(beta_path[j][z]) > 1e-6)
+                        TR++;
+                }
+                TP[i] = (TR + TP[i] * (ct[i] - 1))/ ct[i];
+                FP[i] = (k[j] - TR + FP[i] * (ct[i] - 1))/ ct[i];
+#endif // TRUE_PARAMETER
+                for (int z = 0; z < p; z++) {
+                    beta[i][z] = (beta_path[j][z] + beta[i][z] * (ct[i] - 1))/ ct[i];
+                }
+            }
+        }
+    }
+}
 
 double **cholesky(double **A, int n) {
 	double **L = new double *[n];
@@ -873,7 +991,7 @@ void *cv_lasso_run(void *arg)
 			int *rank = beta_rank(rep_beta, m->model.p);
 			for (int j = 0; j < m->sum; j++) {
 				for (int j_ = 0; j_ < m->model.p; j_++) {
-					if (rank[j_] <= m->k[j]) {
+					if (rank[j_] < m->k[j]) {
 						stage2_beta[j_] = rep_beta[j_];
 					}
 					else {
@@ -894,7 +1012,7 @@ void *cv_lasso_run(void *arg)
         for (int j = 0; j < m->sum; j++) {
             m->beta_all[j] = new double[m->model.p];
             for (int j_ = 0; j_ < m->model.p; j_++) {
-                if (rank[j_] <= m->k[j]) {
+                if (rank[j_] < m->k[j]) {
                     m->beta_all[j][j_] = m->beta[j_];
                 }
                 else {
@@ -906,7 +1024,7 @@ void *cv_lasso_run(void *arg)
         pthread_exit(m);
 }
 
-void cv_path(const XY_new &new_class, int k)
+void cv_path(const XY_new &new_class, int k, ALPath& pre_lasso, ALPath& pre_apml0)
 {
 	double lambda[50];
 	for (int i = 0; i < 50; i++)
@@ -1069,6 +1187,16 @@ void cv_path(const XY_new &new_class, int k)
         }
     }
 
+    int* k_sum__ = new int[sum];
+    double* lam_sum__ = new double[sum];
+
+    for (int i = 0; i < sum; i++) {
+        k_sum__[i] = k_sum[i];
+        lam_sum__[i] = lam_sum[i];
+    }
+
+    pre_lasso.ALadd(k_sum__, lam_sum__, sum, lasso_t, lasso_LG);
+    pre_apml0.ALadd(k_sum__, lam_sum__, sum, apml0_t, apml0_LG);
     for (int i = 0; i < sum; i++) {
         wp_lasso << lasso_LG[i] << ',' << k_sum[i] << ',' << lam_sum[i] << ',';
         wp_apml0<< apml0_LG[i] << ',' << k_sum[i] << ',' << lam_sum[i] << ',';
@@ -1085,6 +1213,9 @@ void cv_path(const XY_new &new_class, int k)
         delete[] apml0_t[i];
         delete[] beta_sum[i];
     }
+    delete[] k_sum_;
+    delete[] k_sum__;
+    delete[] lam_sum__;
     delete[] lasso_t;
     delete[] apml0_t;
     delete[] lasso_LG;

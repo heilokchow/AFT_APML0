@@ -1,4 +1,6 @@
 #define _CRT_SECURE_NO_DEPRECATE
+#define TRUE_PARAMETER 15
+
 #include <iostream>
 #include <fstream>
 #include <cmath>
@@ -13,8 +15,8 @@
 
 using namespace std;
 
-int n = 200;
-int p = 10000;
+int n = 100;
+int p = 1000;
 int maxit = 50;
 int rep = 1;
 int s0 = 1;
@@ -23,43 +25,12 @@ char np = 'Y';
 
 int main(int argc, char *argv[])
 {
-//	int n, p, maxit, rep, s0;
-//	double lambda;
-//	char np;
-
-//	n = atoi(argv[1]);
-//	p = atoi(argv[2]);
-//	maxit = atoi(argv[3]);
-//	rep = atoi(argv[4]);
-//	s0 = atoi(argv[5]);
-//	lambda = atof(argv[6]);
-//	np = argv[7][0];
-
-//	cout << "Please provide the sample size:\n";
-//	cin >> n;
-//	cout << "Please provide the number of parameters (>15):\n";
-//	cin >> p;
-//	cout << "Single Run (Y) or Simulation (N)?\n";
-//	cin >> np;
-//	cout << "Please Provide Lambda\n";
-//	cin >> lambda;
-//	cout << "Please Provide number of Replications\n";
-//	cin >> rep;
-//	cout << "Please Provide Max number of paramters selected (<1000)\n";
-//	cin >> maxit;
-//	cout << "Please Provide Initial Seed\n";
-//	cin >> s0;
-
 	double *beta = new double[p];
-	double t1, t2, t3;
 	ofstream myfile;
 	ofstream lasso;
-	ofstream time;
-
-	time.open("time.txt");
 
 //    ORIGINAL TESTING
-//	for (int i = 0; i < 15; i++) {
+//	for (int i = 0; i < TRUE_PARAMETER; i++) {
 //		beta[i] = pow(-1.0, i) * 2 * exp(-i / 15.0);
 //	}
 
@@ -68,12 +39,12 @@ int main(int argc, char *argv[])
 //	}
 
 //    ROC CURVE SETTING
-	for (int i = 0; i < 15; i++) {
+	for (int i = 0; i < TRUE_PARAMETER; i++) {
 		beta[i] = pow(-1.0, i)* 2 * std::exp(-i / 15.0);
 	}
 
-    for (int i = 15; i < 100; i++) {
-        beta[i] = 1;
+    for (int i = TRUE_PARAMETER; i < 100; i++) {
+        beta[i] = 0;
     }
 
     for (int i = 100; i < p; i++) {
@@ -81,35 +52,22 @@ int main(int argc, char *argv[])
 	}
 
 	if (np == 'Y' or np == 'y') {
-		myfile.open("single_test.txt");
 
-		t1 = clock();
-		XY_old test(n, p, s0, beta);
-		XY_new test1(test);
+        ALPath pre_lasso(p);
+        ALPath pre_apml0(p);
 
-		t2 = clock();
-//		double *beta1 = cdLasso(test1.x, test1.y, (test1.n1 + 1), p, lambda*(test1.n1 + 1));
-		test.print_old();
+        for (int z = 0; z < rep; z++) {
+            XY_old test(n, p, s0 + z, beta);
+            XY_new test1(test);
+            cv_path(test1, 5, pre_lasso, pre_apml0);
+            test.delete_old();
+            test1.delete_new();
+        }
 
-		cv_path(test1, 3);
+        pre_lasso.ALprint("_lasso");
+        pre_apml0.ALprint("_apml0");
 
-		t3 = clock();
-//		double s = test1.LG_all(beta1, lambda*(test1.n1 + 1));
-//		myfile << s << "\n";
-//		for (int i = 0; i < p; i++) {
-//			myfile << beta1[i] << "\n";
-//		}
-		myfile.close();
-
-		test.delete_old();
-		test1.delete_new();
 		delete[] beta;
-//		delete[] beta1;
-
-		time << (t2 - t1) / (double)CLOCKS_PER_SEC << endl;
-		time << (t3 - t2) / (double)CLOCKS_PER_SEC << endl;
-
-		time.close();
 	}
 	else {
 		for (int z = 0; z < rep; z++) {
