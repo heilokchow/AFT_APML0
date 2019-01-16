@@ -1,4 +1,5 @@
 #define _CRT_SECURE_NO_DEPRECATE
+#define CINDEX
 #include <iostream>
 #include <fstream>
 #include <cmath>
@@ -16,6 +17,10 @@
 
 using namespace std;
 
+int n = 295;
+int p = 4919;
+char sr = 'N';
+
 int main()
 {
     ifstream y_input("y_input_1.txt");
@@ -29,23 +34,16 @@ int main()
 	myfile.open("real_random_cv.txt", ios_base::app);
 	lasso.open("real_random_cv_LASSO.txt", ios_base::app);
 
-    int n, p;
-
-    cout << "Please Provide the Sample Size:\n";
-    cin >> n;
-    cout << "Please Provide number of Parameters\n";
-    cin >> p;
-
     double *y = new double[n];
     double *status = new double[n];
-    double **x = new double*[n]; 
+    double **x = new double*[n];
     for(int i = 0; i < n; i++)
     {
         x[i] = new double[p];
     }
-    
+
     string y1, x1, status1;
-    
+
     for(int i = 0; i < n; i++)
     {
         getline(y_input, y1, '\n');
@@ -62,10 +60,6 @@ int main()
         x[i][p - 1] = atof(x1.c_str());
     }
 
-	char sr;
-	cout << "Single Run?(Y/N)\n";
-	cin >> sr;
-
 	if (sr == 'Y' || sr == 'y') {
 		double *y_pro_lasso = new double[n];
 		double *y_pro_apml0 = new double[n];
@@ -78,25 +72,25 @@ int main()
 		test0.status = status;
 		test0.n = n;
 		test0.p = p;
-		
+
 		XY_new test00(test0);
 		test00.cross_validation(myfile, lasso, 100);
-		y_pro_lasso = test00.prognostic_index(test00.lasso_lambda, 0);
-		y_pro_apml0 = test00.prognostic_index(test00.apml0_lambda, test00.apml0_k);
+		y_pro_lasso = test00.prognostic_index(test00.get_lasso_lambda(), 0);
+		y_pro_apml0 = test00.prognostic_index(test00.get_apml0_lambda(), test00.get_apml0_k());
 
 		for (int i = 0; i < n; i++) {
 			prognostic_y << y_pro_lasso[i] << ',' << y_pro_apml0[i] << '\n';
 		}
 
-		//double *beta = cdLasso(test00.x, test00.y, test00.n1 + 1, p, lambda*pow(n,2.0));
-		//double *beta = cdLasso(x, y, n, p, lambda);
-		//for (int i = 0; i < p; i++)
-		//{
-		//	myfile << beta[i] << ",";
-		//}
-		//myfile << "\n";
-
-		//delete[] beta;
+//		double *beta = cdLasso(test00.x, test00.y, test00.n1 + 1, p, lambda*pow(n,2.0));
+//		double *beta = cdLasso(x, y, n, p, lambda);
+//		for (int i = 0; i < p; i++)
+//		{
+//			myfile << beta[i] << ",";
+//		}
+//		myfile << "\n";
+//
+//		delete[] beta;
 
 		test00.delete_new();
 		test00.delete_new_beta();
@@ -106,8 +100,8 @@ int main()
 		delete[] status;
 		delete[] y_pro_lasso;
 		delete[] y_pro_apml0;
-		time_t result = std::time(nullptr);
-		myfile << asctime(localtime(&result)) << "\n";
+//		time_t result = std::time(nullptr);
+//		myfile << asctime(localtime(&result)) << "\n";
 		prognostic_y.close();
 		myfile.close();
 		lasso.close();
@@ -125,6 +119,8 @@ int main()
 
 		double c = 0, c_LASSO = 0;
 		XY_old test0, test1;
+        ALPath pre_lasso(p);
+        ALPath pre_apml0(p);
 
 		for (int z = 0; z < 5; z++) {
 			std::shuffle(&key[0], &key[n - 1], g);
@@ -159,15 +155,10 @@ int main()
 			test1.p = p;
 
 			XY_new test10(test0), test11(test1);
-			test10.cross_validation(myfile, lasso, 100);
-			double *e_beta = test10.best_beta;
-			double *e_beta_LASSO = test10.best_beta_LASSO;
-			c = test11.c_index(e_beta);
-			c_LASSO = test11.c_index(e_beta_LASSO);
-			out << c << "," << c_LASSO << '\n';
+
+            cv_path(test10, test11, 5, pre_lasso, pre_apml0);
 
 			test10.delete_new();
-			test10.delete_new_beta();
 			test11.delete_new();
 			delete[] y0;
 			delete[] x0;
@@ -177,10 +168,12 @@ int main()
 			delete[] status1;
 		}
 
-		time_t result = std::time(nullptr);
-		myfile << asctime(localtime(&result)) << "\n";
-		lasso << asctime(localtime(&result)) << "\n";
-		out << asctime(localtime(&result)) << "\n";
+        pre_lasso.ALprint("_lasso");
+        pre_apml0.ALprint("_apml0");
+//		time_t result = std::time(nullptr);
+//		myfile << asctime(localtime(&result)) << "\n";
+//		lasso << asctime(localtime(&result)) << "\n";
+//		out << asctime(localtime(&result)) << "\n";
 		myfile.close();
 		lasso.close();
 		out.close();

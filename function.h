@@ -7,7 +7,7 @@
 #include <string>
 #include <cstring>
 
-#define USE_IDENTICAL 1
+#define USE_IDENTICAL 0
 
 using namespace std;
 
@@ -44,7 +44,10 @@ public:
 	void cross_validation(ofstream &myfile, ofstream &lasso, int maxit);
 	double *get_beta();
 	double *get_beta_LASSO();
-	double c_index(double *e_beta);
+	double get_lasso_lambda() const;
+	double get_apml0_lambda() const;
+	int get_apml0_k() const;
+	double c_index(double *e_beta) const;
 	double LG_all(double *beta, double lambda);
 	double *prognostic_index(double lambda, int k);
 	friend void *cv_lasso_run(void *arg);
@@ -137,6 +140,10 @@ struct ALPath
     double FP[43] = {0.0};
 #endif // TRUE_PARAMETER
 
+#ifdef CINDEX
+    double c_index[43] = {0.0};
+#endif // CINDEX
+
     ALPath(int model_p)
     {
         p = model_p;
@@ -170,6 +177,10 @@ struct ALPath
             AL_path << TP[i] << ',' << FP[i] << ',';
 #endif // TRUE_PARAMETER
 
+#ifdef CINDEX
+            AL_path << c_index[i] << ',';
+#endif
+
             for (int j = 0; j < p; j++) {
                 AL_path << beta[i][j] << ',';
             }
@@ -179,9 +190,15 @@ struct ALPath
     }
 
     void ALadd(int* k, double* lam, int sum, double** beta_path, double* LG_path);
+    void ALadd(int* k, double* lam, int sum, double** beta_path, double* LG_path, const XY_new& test_model);
+
 };
 
-void ALPath::ALadd(int* k, double* lam, int sum, double** beta_path, double* LG_path)
+void ALPath::ALadd(int* k, double* lam, int sum, double** beta_path, double* LG_path
+#ifdef CINDEX
+                   , const XY_new& test_model
+#endif // CINDEX
+)
 {
     int ini = 0;
     for (int i = 0; i < 43; i++) {
@@ -204,9 +221,14 @@ void ALPath::ALadd(int* k, double* lam, int sum, double** beta_path, double* LG_
                     TP[i] = (TR + TP[i] * (ct[i] - 1))/ ct[i];
                     FP[i] = (k[j] - TR + FP[i] * (ct[i] - 1))/ ct[i];
 #endif // TRUE_PARAMETER
+
                     for (int z = 0; z < p; z++) {
                         beta[i][z] = (beta_path[j][z] + beta[i][z] * (ct[i] - 1))/ ct[i];
                     }
+#ifdef CINDEX
+                    double c = test_model.c_index(beta_path[j]);
+                    c_index[i] = (c + c_index[i] * (ct[i] - 1))/ ct[i];
+#endif // CINDEX
                     break;
                 }
             }
@@ -229,6 +251,10 @@ void ALPath::ALadd(int* k, double* lam, int sum, double** beta_path, double* LG_
                 for (int z = 0; z < p; z++) {
                     beta[i][z] = (beta_path[j][z] + beta[i][z] * (ct[i] - 1))/ ct[i];
                 }
+#ifdef CINDEX
+                double c = test_model.c_index(beta_path[j]);
+                c_index[i] = (c + c_index[i] * (ct[i] - 1))/ ct[i];
+#endif // CINDEX
             }
         }
     }
@@ -311,6 +337,21 @@ c_range new_range(double *y, double low, double high, int n)
 XY_old::XY_old()
 {
 	cout << "XY_old Constructed\n";
+}
+
+double XY_new::get_lasso_lambda() const
+{
+    return(this->lasso_lambda);
+}
+
+double XY_new::get_apml0_lambda() const
+{
+    return(this->apml0_lambda);
+}
+
+int XY_new::get_apml0_k() const
+{
+    return(this->apml0_k);
 }
 
 XY_new::XY_new()
@@ -926,7 +967,7 @@ double*XY_new::get_beta_LASSO()
 	return best_beta_LASSO;
 }
 
-double XY_new::c_index(double *e_beta)
+double XY_new::c_index(double *e_beta) const
 {
 	int c0 = 0;
 	double c2 = 0;
@@ -1024,7 +1065,11 @@ void *cv_lasso_run(void *arg)
         pthread_exit(m);
 }
 
-void cv_path(const XY_new &new_class, int k, ALPath& pre_lasso, ALPath& pre_apml0)
+void cv_path(const XY_new &new_class,
+#ifdef CINDEX
+const XY_new &test_class,
+#endif
+int k, ALPath& pre_lasso, ALPath& pre_apml0)
 {
 	double lambda[50];
 	for (int i = 0; i < 50; i++)
@@ -1195,8 +1240,14 @@ void cv_path(const XY_new &new_class, int k, ALPath& pre_lasso, ALPath& pre_apml
         lam_sum__[i] = lam_sum[i];
     }
 
+#ifdef CINDEX
+    pre_lasso.ALadd(k_sum__, lam_sum__, sum, lasso_t, lasso_LG, test_class);
+    pre_apml0.ALadd(k_sum__, lam_sum__, sum, apml0_t, apml0_LG, test_class);
+#else
     pre_lasso.ALadd(k_sum__, lam_sum__, sum, lasso_t, lasso_LG);
     pre_apml0.ALadd(k_sum__, lam_sum__, sum, apml0_t, apml0_LG);
+#endif // CINDEX
+
     for (int i = 0; i < sum; i++) {
         wp_lasso << lasso_LG[i] << ',' << k_sum[i] << ',' << lam_sum[i] << ',';
         wp_apml0<< apml0_LG[i] << ',' << k_sum[i] << ',' << lam_sum[i] << ',';

@@ -15,7 +15,7 @@
 
 using namespace std;
 
-int n = 100;
+int n = 200;
 int p = 1000;
 int maxit = 50;
 int rep = 1;
