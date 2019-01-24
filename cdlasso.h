@@ -86,7 +86,7 @@ double *cdLasso(double **A, double *B, int n, int p, double lambda) {
 
 	double *r = new double[n];
 //	double **x = new double *[p];
-    double *x = new double[n + 1];
+        double *x = new double[n + 1];
 	double s = 0, s1 = 0;
 	double *z = new double[n + 1];
 	double *beta = new double[p];
@@ -98,7 +98,7 @@ double *cdLasso(double **A, double *B, int n, int p, double lambda) {
 	double *r_ = new double[n];
 	int flag1 = 0;
 
-    x[n] = lambda;
+	x[n] = lambda;
 	for (int i = 0; i < p; i++)
 	{
 //      CACHE OTIMIZTION WITH MEMORY TRADE OFF
@@ -158,8 +158,7 @@ double *cdLasso(double **A, double *B, int n, int p, double lambda) {
 		}
 		else
 		{
-			for (int j = 0; j < p; j++)
-			{
+			for (int j = 0; j < p; j++) {
 				zdd[j] += abs(A[i][j]);
 			}
 		}
@@ -204,8 +203,7 @@ double *cdLasso(double **A, double *B, int n, int p, double lambda) {
 			}
 		}
 
-        for (int j = 0; j < n; j++)
-		{
+		for (int j = 0; j < n; j++) {
 			x[j] = abs(A[j][k]);
 		}
 		beta_ = key_sort(x, z, n);

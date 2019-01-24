@@ -42,12 +42,10 @@ int main(int argc, char *argv[])
 	for (int i = 0; i < TRUE_PARAMETER; i++) {
 		beta[i] = pow(-1.0, i)* 2 * std::exp(-i / 15.0);
 	}
-
-    for (int i = TRUE_PARAMETER; i < 100; i++) {
+	for (int i = TRUE_PARAMETER; i < 100; i++) {
         beta[i] = 0;
-    }
-
-    for (int i = 100; i < p; i++) {
+	}
+	for (int i = 100; i < p; i++) {
 		beta[i] = 0;
 	}
 
@@ -67,7 +65,7 @@ int main(int argc, char *argv[])
         pre_lasso.ALprint("_lasso");
         pre_apml0.ALprint("_apml0");
 
-		delete[] beta;
+	delete[] beta;
 	}
 	else {
 		for (int z = 0; z < rep; z++) {

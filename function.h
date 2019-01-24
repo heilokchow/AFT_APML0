@@ -48,7 +48,7 @@ public:
 	double get_apml0_lambda() const;
 	int get_apml0_k() const;
 	double c_index(double *e_beta) const;
-	double LG_all(double *beta, double lambda);
+	double LG_all(double *beta, double lambda) const;
 	double *prognostic_index(double lambda, int k);
 	friend void *cv_lasso_run(void *arg);
 
@@ -142,6 +142,9 @@ struct ALPath
 
 #ifdef CINDEX
     double c_index[43] = {0.0};
+#ifdef MSE
+    double mse_LG[43] ={0.0};
+#endif // MSE
 #endif // CINDEX
 
     ALPath(int model_p)
@@ -179,6 +182,9 @@ struct ALPath
 
 #ifdef CINDEX
             AL_path << c_index[i] << ',';
+#ifdef MSE
+            AL_path << mse_LG[i] << ',';
+#endif // MSE
 #endif
 
             for (int j = 0; j < p; j++) {
@@ -228,6 +234,10 @@ void ALPath::ALadd(int* k, double* lam, int sum, double** beta_path, double* LG_
 #ifdef CINDEX
                     double c = test_model.c_index(beta_path[j]);
                     c_index[i] = (c + c_index[i] * (ct[i] - 1))/ ct[i];
+#ifdef MSE
+                    double ms = test_model.LG_all(beta_path[j], 0)/(2.0 * test_model.n);
+                    mse_LG[i] = (ms + mse_LG[i] * (ct[i] - 1))/ ct[i];
+#endif // MSE
 #endif // CINDEX
                     break;
                 }
@@ -254,6 +264,10 @@ void ALPath::ALadd(int* k, double* lam, int sum, double** beta_path, double* LG_
 #ifdef CINDEX
                 double c = test_model.c_index(beta_path[j]);
                 c_index[i] = (c + c_index[i] * (ct[i] - 1))/ ct[i];
+#ifdef MSE
+                double ms = test_model.LG_all(beta_path[j], 0)/(2.0 * test_model.n);
+                mse_LG[i] = (ms + mse_LG[i] * (ct[i] - 1))/ ct[i];
+#endif // MSE
 #endif // CINDEX
             }
         }
@@ -539,7 +553,7 @@ XY_new::~XY_new() {
 	cout << "Destructor_new is called\n";
 }
 
-double XY_new::LG_all(double *beta, double lambda)
+double XY_new::LG_all(double *beta, double lambda) const
 {
 	double s = 0, r = 0;
 	for (int i = 0; i < n1; i++) {
@@ -1004,19 +1018,24 @@ void *lasso_run(void *arg)
 
 void *cv_lasso_run(void *arg)
 {
+#ifdef FOLDS
+    int folds = FOLDS;
+#else
+    int folds = 10;
+#endif
     cv_lasso_path *m = (cv_lasso_path*)arg;
 
     m->LG = new double[m->sum];
     for (int i = 0; i < m->sum; i++) {
         m->LG[i] = 0;
     }
-    int fold = int (floor(m->model.n / 10) + 0.5);
+    int fold = int (floor(m->model.n / folds) + 0.5);
 
     double *stage2_beta = new double[m->model.p];
-    for (int i = 0; i < 10; i++) {
+    for (int i = 0; i < folds; i++) {
         int low = fold * i;
         int high = fold * (i + 1) - 1;
-        if (i == 9) {
+        if (i == (folds - 1)) {
             high = m->model.n - 1;
         }
 

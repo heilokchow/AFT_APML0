@@ -1,5 +1,10 @@
 #define _CRT_SECURE_NO_DEPRECATE
 #define CINDEX
+#define FOLDS 4
+#define TRAIN_TEST 0.75
+#define MSE
+#define TEST_MODE
+
 #include <iostream>
 #include <fstream>
 #include <cmath>
@@ -17,49 +22,73 @@
 
 using namespace std;
 
-int n = 295;
-int p = 4919;
+int n = 300;
+int p = 10000;
 char sr = 'N';
+char c_sim = 'Y';
 
 int main()
 {
-    ifstream y_input("y_input_1.txt");
-    ifstream status_input("status_input_1.txt");
-    ifstream x_input("x_input_1.txt");
     ofstream out;
-	ofstream myfile;
-	ofstream lasso;
+    ofstream myfile;
+    ofstream lasso;
 
-	out.open("real_out.txt", ios_base::app);
-	myfile.open("real_random_cv.txt", ios_base::app);
-	lasso.open("real_random_cv_LASSO.txt", ios_base::app);
+    out.open("real_out.txt", ios_base::app);
+    myfile.open("real_random_cv.txt", ios_base::app);
+    lasso.open("real_random_cv_LASSO.txt", ios_base::app);
 
     double *y = new double[n];
     double *status = new double[n];
     double **x = new double*[n];
-    for(int i = 0; i < n; i++)
-    {
+
+    for(int i = 0; i < n; i++) {
         x[i] = new double[p];
     }
 
-    string y1, x1, status1;
+    if (c_sim != 'Y') {
+        ifstream y_input("y_input_1.txt");
+        ifstream status_input("status_input_1.txt");
+        ifstream x_input("x_input_1.txt");
+        string y1, x1, status1;
 
-    for(int i = 0; i < n; i++)
-    {
-        getline(y_input, y1, '\n');
-        getline(status_input, status1, '\n');
-        y[i] = atof(y1.c_str());
-        status[i] = atof(status1.c_str());
+        for(int i = 0; i < n; i++) {
+            getline(y_input, y1, '\n');
+            getline(status_input, status1, '\n');
+            y[i] = atof(y1.c_str());
+            status[i] = atof(status1.c_str());
 
-        for(int j = 0; j < (p - 1); j++)
-        {
-            getline(x_input, x1, ',');
-            x[i][j] = atof(x1.c_str());
+            for(int j = 0; j < (p - 1); j++) {
+                getline(x_input, x1, ',');
+                x[i][j] = atof(x1.c_str());
+            }
+            getline(x_input, x1, '\n');
+            x[i][p - 1] = atof(x1.c_str());
         }
-        getline(x_input, x1, '\n');
-        x[i][p - 1] = atof(x1.c_str());
+    }
+    else {
+        double *beta = new double[p];
+        for (int i = 0; i < 15; i++) {
+            beta[i] = pow(-1.0, i)* 2 * std::exp(-i / 15.0);
+        }
+        for (int i = 15; i < 100; i++) {
+            beta[i] = 0;
+        }
+        for (int i = 100; i < p; i++) {
+            beta[i] = 0;
+        }
+        XY_old test(n, p, 1, beta);
+        for (int i = 0; i < n; i++) {
+            y[i] = test.y[i];
+            status[i] = test.status[i];
+            for (int j = 0; j < p; j++) {
+                x[i][j] = test.x[i][j];
+            }
+        }
+        delete[] beta;
+        test.delete_old();
     }
 
+#ifndef TEST_MODE
 	if (sr == 'Y' || sr == 'y') {
 		double *y_pro_lasso = new double[n];
 		double *y_pro_apml0 = new double[n];
@@ -114,15 +143,19 @@ int main()
 		for (int i = 0; i < n; i++)
 			key[i] = i;
 
-		int n0 = int(floor(n / 2.0) + 0.5);
+#ifdef TRAIN_TEST
+		int n0 = int(floor(n * TRAIN_TEST) + 0.5);
+#else
+        int n0 = int(floor(n / 2.0) + 0.5);
+#endif // TRAIN_TEST
 		int n1 = n - n0;
 
 		double c = 0, c_LASSO = 0;
 		XY_old test0, test1;
-        ALPath pre_lasso(p);
-        ALPath pre_apml0(p);
+		ALPath pre_lasso(p);
+		ALPath pre_apml0(p);
 
-		for (int z = 0; z < 5; z++) {
+		for (int z = 0; z < 20; z++) {
 			std::shuffle(&key[0], &key[n - 1], g);
 			double *y0 = new double[n0];
 			double **x0 = new double*[n0];
@@ -155,8 +188,7 @@ int main()
 			test1.p = p;
 
 			XY_new test10(test0), test11(test1);
-
-            cv_path(test10, test11, 5, pre_lasso, pre_apml0);
+			cv_path(test10, test11, 50, pre_lasso, pre_apml0);
 
 			test10.delete_new();
 			test11.delete_new();
@@ -166,10 +198,9 @@ int main()
 			delete[] y1;
 			delete[] x1;
 			delete[] status1;
+			pre_lasso.ALprint("_lasso");
+			pre_apml0.ALprint("_apml0");
 		}
-
-        pre_lasso.ALprint("_lasso");
-        pre_apml0.ALprint("_apml0");
 //		time_t result = std::time(nullptr);
 //		myfile << asctime(localtime(&result)) << "\n";
 //		lasso << asctime(localtime(&result)) << "\n";
@@ -184,5 +215,26 @@ int main()
 		delete[] y;
 		delete[] status;
 	}
-    return 0;
+#endif // TEST_MODE
+
+#ifdef TEST_MODE
+    XY_old test0;
+    test0.x = x;
+    test0.y = y;
+    test0.status = status;
+    test0.n = n;
+    test0.p = p;
+    XY_new test00(test0);
+
+    clock_t begin = clock();
+    double* beta = cdLasso(test00.x, test00.y, test00.n1 + 1, p, 0.000001);
+    clock_t end = clock();
+    double elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;
+    std::cout << elapsed_secs << 's' << std::endl;
+
+    test00.delete_new();
+    test0.delete_old();
+    delete[] beta;
+#endif // TEST_MODE
+	return 0;
 }
