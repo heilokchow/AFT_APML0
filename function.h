@@ -8,6 +8,7 @@
 #include <cstring>
 
 #define USE_IDENTICAL 0
+#define THREAD_VALUE 6
 
 using namespace std;
 
@@ -1103,18 +1104,21 @@ int k, ALPath& pre_lasso, ALPath& pre_apml0)
 
 	pthread_t tid[k];
 	pthread_attr_t attr[k];
-	for (int i = 0; i < k; i++) {
-		cout << path[i].lambda << endl;
-		pthread_attr_init(&attr[i]);
-		pthread_create(&tid[i], &attr[i], lasso_run, &path[i]);
-	}
 
-	lasso_path* temp;
-	for (int i = 0; i < k; i++) {
-		temp = &path[i];
-		pthread_join(tid[i], (void**) &temp);
-	}
+    int tv0 = (int) ceil(k/(double)THREAD_VALUE);
+    lasso_path* temp;
+    for (int j = 0; j < tv0; j++) {
+        for (int i = j*THREAD_VALUE; i < std::min((j + 1)*THREAD_VALUE, k); i++) {
+            cout << path[i].lambda << endl;
+            pthread_attr_init(&attr[i]);
+            pthread_create(&tid[i], &attr[i], lasso_run, &path[i]);
+        }
 
+        for (int i = j*THREAD_VALUE; i < std::min((j + 1)*THREAD_VALUE, k); i++) {
+            temp = &path[i];
+            pthread_join(tid[i], (void**) &temp);
+        }
+    }
 
 //	for (int i = 0; i < k; i++)
 //	{
@@ -1180,7 +1184,7 @@ int k, ALPath& pre_lasso, ALPath& pre_apml0)
     }
 
 	delete[] path;
-
+    std::cout << "-------------------4\n";
 //  CROSS VALIDDATION FOR APML0 UNDER DIFFERENT PENALTY LEVEL
     cv_lasso_path *cv_path = new cv_lasso_path[sum];
     int *k_sum_ = new int[sum];
@@ -1199,37 +1203,43 @@ int k, ALPath& pre_lasso, ALPath& pre_apml0)
 
 	pthread_t tid1[sum];
 	pthread_attr_t attr1[sum];
-	for (int i = 0; i < sum; i++) {
-		std::cout << "cv_lambda: " << cv_path[i].lambda << std::endl;
-		pthread_attr_init(&attr1[i]);
-		pthread_create(&tid1[i], &attr1[i], cv_lasso_run, &cv_path[i]);
-	}
 
-	cv_lasso_path* temp1;
-	for (int i = 0; i < sum; i++) {
-		temp1 = &cv_path[i];
-		pthread_join(tid1[i], (void**) &temp1);
+	int tv = ceil(sum/(double)THREAD_VALUE);
+    cv_lasso_path* temp1;
+    std::cout << "sum: " << sum << "T_V: " << THREAD_VALUE << "tv: " << tv << std::endl;
+	for (int j = 0; j < tv; j++) {
+        for (int i = j*THREAD_VALUE; i < std::min((j + 1)*THREAD_VALUE, sum); i++) {
+            std::cout << "cv_lambda: " << cv_path[i].lambda << std::endl;
+            pthread_attr_init(&attr1[i]);
+            pthread_create(&tid1[i], &attr1[i], cv_lasso_run, &cv_path[i]);
+        }
+
+        for (int i = j*THREAD_VALUE; i < std::min((j + 1)*THREAD_VALUE, sum); i++) {
+            temp1 = &cv_path[i];
+            pthread_join(tid1[i], (void**) &temp1);
+        }
 	}
 
     for (int i = 0; i < sum; i++) {
         for (int j = 0; j < sum; j++) {
             std::cout << cv_path[i].LG[j] << ' ';
+//            std::cout << i << "------" << j << std::endl;
         }
-        std::cout << std::endl;
+//        std::cout << std::endl;
     }
-
+    std::cout << sum << std::endl;
 //  OUTPUT RESULT TO FILE
-    std::ofstream wp_lasso;
-    std::ofstream wp_apml0;
+//    std::ofstream wp_lasso;
+//    std::ofstream wp_apml0;
 
-    wp_lasso.open("wp_lasso.txt");
-    wp_apml0.open("wp_apml0.txt");
+//    wp_lasso.open("wp_lasso.txt");
+//    wp_apml0.open("wp_apml0.txt");
 
     double** lasso_t = new double*[sum];
     double** apml0_t = new double*[sum];
     double* lasso_LG = new double[sum];
     double* apml0_LG = new double[sum];
-
+    std::cout << "-------------------0\n";
     for (int i = 0; i < sum; i++) {
         lasso_t[i] = new double[new_class.p];
         apml0_t[i] = new double[new_class.p];
@@ -1258,7 +1268,7 @@ int k, ALPath& pre_lasso, ALPath& pre_apml0)
         k_sum__[i] = k_sum[i];
         lam_sum__[i] = lam_sum[i];
     }
-
+    std::cout << "-------------------1\n";
 #ifdef CINDEX
     pre_lasso.ALadd(k_sum__, lam_sum__, sum, lasso_t, lasso_LG, test_class);
     pre_apml0.ALadd(k_sum__, lam_sum__, sum, apml0_t, apml0_LG, test_class);
@@ -1266,32 +1276,35 @@ int k, ALPath& pre_lasso, ALPath& pre_apml0)
     pre_lasso.ALadd(k_sum__, lam_sum__, sum, lasso_t, lasso_LG);
     pre_apml0.ALadd(k_sum__, lam_sum__, sum, apml0_t, apml0_LG);
 #endif // CINDEX
-
-    for (int i = 0; i < sum; i++) {
-        wp_lasso << lasso_LG[i] << ',' << k_sum[i] << ',' << lam_sum[i] << ',';
-        wp_apml0<< apml0_LG[i] << ',' << k_sum[i] << ',' << lam_sum[i] << ',';
-        for (int j = 0; j < new_class.p; j++) {
-            wp_lasso << lasso_t[i][j] << ',';
-            wp_apml0<< apml0_t[i][j] << ',';
-        }
-        wp_lasso << std::endl;
-        wp_apml0 << std::endl;
-    }
-
+    std::cout << "-------------------2\n";
+//    for (int i = 0; i < sum; i++) {
+//        wp_lasso << lasso_LG[i] << ',' << k_sum[i] << ',' << lam_sum[i] << ',';
+//        wp_apml0<< apml0_LG[i] << ',' << k_sum[i] << ',' << lam_sum[i] << ',';
+//        for (int j = 0; j < new_class.p; j++) {
+//            wp_lasso << lasso_t[i][j] << ',';
+//            wp_apml0<< apml0_t[i][j] << ',';
+//        }
+//        wp_lasso << std::endl;
+//        wp_apml0 << std::endl;
+//    }
+    std::cout << "-------------------3\n";
     for (int i = 0; i < sum; i++) {
         delete[] lasso_t[i];
         delete[] apml0_t[i];
         delete[] beta_sum[i];
     }
+    std::cout << "-------------------3.5\n";
     delete[] k_sum_;
+    std::cout << "-------------------4\n";
     delete[] k_sum__;
     delete[] lam_sum__;
     delete[] lasso_t;
     delete[] apml0_t;
     delete[] lasso_LG;
     delete[] apml0_LG;
+    std::cout << "-------------------5\n";
     delete[] cv_path;
-    wp_lasso.close();
-    wp_apml0.close();
-
+//    wp_lasso.close();
+//    wp_apml0.close();
+    std::cout << "-------------------6\n";
 }

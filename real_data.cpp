@@ -1,9 +1,9 @@
-#define _CRT_SECURE_NO_DEPRECATE
+    #define _CRT_SECURE_NO_DEPRECATE
 #define CINDEX
 #define FOLDS 4
 #define TRAIN_TEST 0.75
 #define MSE
-#define TEST_MODE
+//#define TEST_MODE
 
 #include <iostream>
 #include <fstream>
@@ -22,8 +22,8 @@
 
 using namespace std;
 
-int n = 300;
-int p = 10000;
+int n = 100;
+int p = 200;
 char sr = 'N';
 char c_sim = 'Y';
 
@@ -188,13 +188,14 @@ int main()
 			test1.p = p;
 
 			XY_new test10(test0), test11(test1);
-			cv_path(test10, test11, 50, pre_lasso, pre_apml0);
-
+			cv_path(test10, test11, 6, pre_lasso, pre_apml0);
+            std::cout << "-------------------z1:" << z << '\n';
 			test10.delete_new();
 			test11.delete_new();
 			delete[] y0;
 			delete[] x0;
 			delete[] status0;
+			std::cout << "-------------------z2:" << z << '\n';
 			delete[] y1;
 			delete[] x1;
 			delete[] status1;
