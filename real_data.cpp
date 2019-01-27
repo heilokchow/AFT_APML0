@@ -89,138 +89,138 @@ int main()
     }
 
 #ifndef TEST_MODE
-	if (sr == 'Y' || sr == 'y') {
-		double *y_pro_lasso = new double[n];
-		double *y_pro_apml0 = new double[n];
-		ofstream prognostic_y;
-		prognostic_y.open("pronostic_y.txt", ios_base::app);
+    if (sr == 'Y' || sr == 'y') {
+        double *y_pro_lasso = new double[n];
+        double *y_pro_apml0 = new double[n];
+        ofstream prognostic_y;
+        prognostic_y.open("pronostic_y.txt", ios_base::app);
 
-		XY_old test0;
-		test0.x = x;
-		test0.y = y;
-		test0.status = status;
-		test0.n = n;
-		test0.p = p;
+        XY_old test0;
+        test0.x = x;
+        test0.y = y;
+        test0.status = status;
+        test0.n = n;
+        test0.p = p;
 
-		XY_new test00(test0);
-		test00.cross_validation(myfile, lasso, 100);
-		y_pro_lasso = test00.prognostic_index(test00.get_lasso_lambda(), 0);
-		y_pro_apml0 = test00.prognostic_index(test00.get_apml0_lambda(), test00.get_apml0_k());
+        XY_new test00(test0);
+        test00.cross_validation(myfile, lasso, 100);
+        y_pro_lasso = test00.prognostic_index(test00.get_lasso_lambda(), 0);
+        y_pro_apml0 = test00.prognostic_index(test00.get_apml0_lambda(), test00.get_apml0_k());
 
-		for (int i = 0; i < n; i++) {
-			prognostic_y << y_pro_lasso[i] << ',' << y_pro_apml0[i] << '\n';
-		}
+        for (int i = 0; i < n; i++) {
+            prognostic_y << y_pro_lasso[i] << ',' << y_pro_apml0[i] << '\n';
+        }
 
-//		double *beta = cdLasso(test00.x, test00.y, test00.n1 + 1, p, lambda*pow(n,2.0));
-//		double *beta = cdLasso(x, y, n, p, lambda);
-//		for (int i = 0; i < p; i++)
-//		{
-//			myfile << beta[i] << ",";
-//		}
-//		myfile << "\n";
+//        double *beta = cdLasso(test00.x, test00.y, test00.n1 + 1, p, lambda*pow(n,2.0));
+//        double *beta = cdLasso(x, y, n, p, lambda);
+//        for (int i = 0; i < p; i++)
+//        {
+//            myfile << beta[i] << ",";
+//        }
+//        myfile << "\n";
 //
-//		delete[] beta;
+//        delete[] beta;
 
-		test00.delete_new();
-		test00.delete_new_beta();
-		test0.delete_old();
-		delete[] x;
-		delete[] y;
-		delete[] status;
-		delete[] y_pro_lasso;
-		delete[] y_pro_apml0;
-//		time_t result = std::time(nullptr);
-//		myfile << asctime(localtime(&result)) << "\n";
-		prognostic_y.close();
-		myfile.close();
-		lasso.close();
-		out.close();
-	}
-	else {
-		std::random_device rd;
-		std::mt19937 g(rd());
-		int *key = new int[n];
-		for (int i = 0; i < n; i++)
-			key[i] = i;
+        test00.delete_new();
+        test00.delete_new_beta();
+        test0.delete_old();
+        delete[] x;
+        delete[] y;
+        delete[] status;
+        delete[] y_pro_lasso;
+        delete[] y_pro_apml0;
+//        time_t result = std::time(nullptr);
+//        myfile << asctime(localtime(&result)) << "\n";
+        prognostic_y.close();
+        myfile.close();
+        lasso.close();
+        out.close();
+    }
+    else {
+        std::random_device rd;
+        std::mt19937 g(rd());
+        int *key = new int[n];
+        for (int i = 0; i < n; i++)
+            key[i] = i;
 
 #ifdef TRAIN_TEST
-		int n0 = int(floor(n * TRAIN_TEST) + 0.5);
+        int n0 = int(floor(n * TRAIN_TEST) + 0.5);
 #else
         int n0 = int(floor(n / 2.0) + 0.5);
 #endif // TRAIN_TEST
-		int n1 = n - n0;
+        int n1 = n - n0;
 
-		double c = 0, c_LASSO = 0;
-		XY_old test0, test1;
-		ALPath pre_lasso(p);
-		ALPath pre_apml0(p);
+        double c = 0, c_LASSO = 0;
+        XY_old test0, test1;
+        ALPath pre_lasso(p);
+        ALPath pre_apml0(p);
 
-		for (int z = 0; z < 20; z++) {
-			std::shuffle(&key[0], &key[n - 1], g);
-			double *y0 = new double[n0];
-			double **x0 = new double*[n0];
-			double *status0 = new double[n0];
-			double *y1 = new double[n1];
-			double **x1 = new double*[n1];
-			double *status1 = new double[n1];
+        for (int z = 0; z < 20; z++) {
+            std::shuffle(&key[0], &key[n - 1], g);
+            double *y0 = new double[n0];
+            double **x0 = new double*[n0];
+            double *status0 = new double[n0];
+            double *y1 = new double[n1];
+            double **x1 = new double*[n1];
+            double *status1 = new double[n1];
 
-			for (int i = 0; i < n0; i++) {
-				y0[i] = y[key[i]];
-				x0[i] = x[key[i]];
-				status0[i] = status[key[i]];
-			}
+            for (int i = 0; i < n0; i++) {
+                y0[i] = y[key[i]];
+                x0[i] = x[key[i]];
+                status0[i] = status[key[i]];
+            }
 
-			for (int i = n0; i < n; i++) {
-				y1[i - n0] = y[key[i]];
-				x1[i - n0] = x[key[i]];
-				status1[i - n0] = status[key[i]];
-			}
+            for (int i = n0; i < n; i++) {
+                y1[i - n0] = y[key[i]];
+                x1[i - n0] = x[key[i]];
+                status1[i - n0] = status[key[i]];
+            }
 
-			test0.y = y0;
-			test0.x = x0;
-			test0.status = status0;
-			test0.n = n0;
-			test0.p = p;
-			test1.y = y1;
-			test1.x = x1;
-			test1.status = status1;
-			test1.n = n1;
-			test1.p = p;
+            test0.y = y0;
+            test0.x = x0;
+            test0.status = status0;
+            test0.n = n0;
+            test0.p = p;
+            test1.y = y1;
+            test1.x = x1;
+            test1.status = status1;
+            test1.n = n1;
+            test1.p = p;
 
-			XY_new test10(test0);
+            XY_new test10(test0);
 #ifdef CINDEX
-			XY_new test11(test1);
-			cv_path(test10, test11, 12, pre_lasso, pre_apml0);
-			test11.delete_new();
+            XY_new test11(test1);
+            cv_path(test10, test11, 12, pre_lasso, pre_apml0);
+            test11.delete_new();
 #else
             cv_path(test10, 20, pre_lasso, pre_apml0);
 #endif // CINDEX
             std::cout << "-------------------z1:" << z << '\n';
-			test10.delete_new();
-			std::cout << "-------------------z2:" << z << '\n';
-			delete[] y0;
-			delete[] x0;
-			delete[] status0;
-			delete[] y1;
-			delete[] x1;
-			delete[] status1;
-			pre_lasso.ALprint("_lasso");
-			pre_apml0.ALprint("_apml0");
-		}
-//		time_t result = std::time(nullptr);
-//		myfile << asctime(localtime(&result)) << "\n";
-//		lasso << asctime(localtime(&result)) << "\n";
-//		out << asctime(localtime(&result)) << "\n";
-		myfile.close();
-		lasso.close();
-		out.close();
+            test10.delete_new();
+            std::cout << "-------------------z2:" << z << '\n';
+            delete[] y0;
+            delete[] x0;
+            delete[] status0;
+            delete[] y1;
+            delete[] x1;
+            delete[] status1;
+            pre_lasso.ALprint("_lasso");
+            pre_apml0.ALprint("_apml0");
+        }
+//        time_t result = std::time(nullptr);
+//        myfile << asctime(localtime(&result)) << "\n";
+//        lasso << asctime(localtime(&result)) << "\n";
+//        out << asctime(localtime(&result)) << "\n";
+        myfile.close();
+        lasso.close();
+        out.close();
 
-		for (int i = 0; i < n; i++) {
-			delete[] x[i];
-		}
-		delete[] y;
-		delete[] status;
-	}
+        for (int i = 0; i < n; i++) {
+            delete[] x[i];
+        }
+        delete[] y;
+        delete[] status;
+    }
 #endif // TEST_MODE
 
 #ifdef TEST_MODE
@@ -242,5 +242,5 @@ int main()
     test0.delete_old();
     delete[] beta;
 #endif // TEST_MODE
-	return 0;
+    return 0;
 }

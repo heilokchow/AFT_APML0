@@ -16,3 +16,5 @@ apml0_aft_linux/
 *.layout
 bin/
 *.depend
+archive/
+apml0_old/

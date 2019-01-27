@@ -25,31 +25,31 @@ char np = 'Y';
 
 int main(int argc, char *argv[])
 {
-	double *beta = new double[p];
-	ofstream myfile;
-	ofstream lasso;
+    double *beta = new double[p];
+    ofstream myfile;
+    ofstream lasso;
 
 //    ORIGINAL TESTING
-//	for (int i = 0; i < TRUE_PARAMETER; i++) {
-//		beta[i] = pow(-1.0, i) * 2 * exp(-i / 15.0);
-//	}
+//    for (int i = 0; i < TRUE_PARAMETER; i++) {
+//        beta[i] = pow(-1.0, i) * 2 * exp(-i / 15.0);
+//    }
 
-//	for (int i = 15; i < p; i++) {
-//		beta[i] = 0;
-//	}
+//    for (int i = 15; i < p; i++) {
+//        beta[i] = 0;
+//    }
 
 //    ROC CURVE SETTING
-	for (int i = 0; i < TRUE_PARAMETER; i++) {
-		beta[i] = pow(-1.0, i)* 2 * std::exp(-i / 15.0);
-	}
-	for (int i = TRUE_PARAMETER; i < 100; i++) {
+    for (int i = 0; i < TRUE_PARAMETER; i++) {
+        beta[i] = pow(-1.0, i)* 2 * std::exp(-i / 15.0);
+    }
+    for (int i = TRUE_PARAMETER; i < 100; i++) {
         beta[i] = 0;
-	}
-	for (int i = 100; i < p; i++) {
-		beta[i] = 0;
-	}
+    }
+    for (int i = 100; i < p; i++) {
+        beta[i] = 0;
+    }
 
-	if (np == 'Y' or np == 'y') {
+    if (np == 'Y' or np == 'y') {
 
         ALPath pre_lasso(p);
         ALPath pre_apml0(p);
@@ -65,30 +65,30 @@ int main(int argc, char *argv[])
         pre_lasso.ALprint("_lasso");
         pre_apml0.ALprint("_apml0");
 
-	delete[] beta;
-	}
-	else {
-		for (int z = 0; z < rep; z++) {
-			myfile.open("simulation_APML0.txt",ios_base::app);
-			lasso.open("simulation_LASSO.txt",ios_base::app);
-			XY_old test(n, p, z + s0, beta);
-			XY_new test1(test);
-			test1.cross_validation(myfile, lasso, maxit);
-			test1.delete_new();
-			test.delete_old();
-			myfile.close();
-			lasso.close();
-			cout << "-----------" << z << endl;
-		}
+    delete[] beta;
+    }
+    else {
+        for (int z = 0; z < rep; z++) {
+            myfile.open("simulation_APML0.txt",ios_base::app);
+            lasso.open("simulation_LASSO.txt",ios_base::app);
+            XY_old test(n, p, z + s0, beta);
+            XY_new test1(test);
+            test1.cross_validation(myfile, lasso, maxit);
+            test1.delete_new();
+            test.delete_old();
+            myfile.close();
+            lasso.close();
+            cout << "-----------" << z << endl;
+        }
 
-	myfile.open("simulation_APML0.txt",ios_base::app);
-	lasso.open("simulation_LASSO.txt",ios_base::app);
-	time_t result = std::time(nullptr);
-	myfile << asctime(localtime(&result)) << "\n";
-	lasso << asctime(localtime(&result)) << "\n";
-	myfile.close();
-	lasso.close();
-	}
+    myfile.open("simulation_APML0.txt",ios_base::app);
+    lasso.open("simulation_LASSO.txt",ios_base::app);
+    time_t result = std::time(nullptr);
+    myfile << asctime(localtime(&result)) << "\n";
+    lasso << asctime(localtime(&result)) << "\n";
+    myfile.close();
+    lasso.close();
+    }
 
-	return 0;
+    return 0;
 }
