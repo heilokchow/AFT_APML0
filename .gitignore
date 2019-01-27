@@ -12,3 +12,5 @@ debug_simulation/
 Simulation_VS/
 test1
 apml0_aft_linux/
+*.cbp
+*.layout
