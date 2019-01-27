@@ -8,7 +8,7 @@
 #include <cstring>
 
 #define USE_IDENTICAL 0
-#define THREAD_VALUE 6
+#define THREAD_VALUE 12
 
 using namespace std;
 
@@ -1133,6 +1133,8 @@ int k, ALPath& pre_lasso, ALPath& pre_apml0)
 //  C++11
     std::unique_ptr<int[]> k_size(new int[k]);
     std::unique_ptr<int[]> k_flag(new int[k]);
+//    int* k_size = new int[k];
+//    int* k_flag= new int[k];
 
     for (int i = 0; i < k; i++) {
         k_size[i] = number_nzero(path[i].beta, new_class.p);
@@ -1154,6 +1156,9 @@ int k, ALPath& pre_lasso, ALPath& pre_apml0)
             sum++;
             k_flag[i] = 1;
         }
+        else {
+        k_flag[i] = 0;
+        }
     }
     sum++;
     k_flag[k - 1] = 1;
@@ -1168,6 +1173,10 @@ int k, ALPath& pre_lasso, ALPath& pre_apml0)
     std::unique_ptr<double[]> lam_sum(new double[sum]);
     std::unique_ptr<double*[]> beta_sum(new double*[sum]);
 
+//    int* k_sum= new int[sum];
+//    double* lam_sum= new double[sum];
+//    double** beta_sum= new double*[sum];
+
     int q = 0;
     for (int i = 0; i < k; i++) {
         if (k_flag[i] == 1) {
@@ -1176,13 +1185,24 @@ int k, ALPath& pre_lasso, ALPath& pre_apml0)
             beta_sum[q] = path[i].beta;
             std::cout << "k: " << k_size[i] << " lambda: " << lambda[i] << " beta: " << path[i].beta[0] << std::endl;
             std::cout << "k: " << k_sum[q] << " lambda: " << lam_sum[q] << " beta: " << beta_sum[q][0] << std::endl;
+//            delete[] beta_sum[q];
+            std::cout << "q: " << q << "-----" << sum << std::endl;
             q++;
         }
         else {
             delete[] path[i].beta;
         }
     }
+//      DEBUG
+//    for (int i = 0; i < k; i++) {
+//        delete[] path[i].beta;
+//    }
 
+//    delete[] k_size;
+//    delete[] k_sum;
+//    delete[] k_flag;
+//    delete[] lam_sum;
+//    delete[] beta_sum;
 	delete[] path;
     std::cout << "-------------------4\n";
 //  CROSS VALIDDATION FOR APML0 UNDER DIFFERENT PENALTY LEVEL
