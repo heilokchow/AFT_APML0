@@ -8,7 +8,7 @@
 #include <cstring>
 
 #define USE_IDENTICAL 0
-#define THREAD_VALUE 12
+#define THREAD_VALUE 6
 
 using namespace std;
 
@@ -398,18 +398,33 @@ XY_old::XY_old(int n0, int p0, int seed0, double *beta)
         }
     }
 #else
-    double **CV = new double *[50];
-    for (int i = 0; i < 50; i++) {
-        CV[i] = new double[50];
-        for (int j = 0; j < 50; j++) {
+    int T_P = 15;
+    int F_P = 30;
+    double base_cv = 0;
+    double cv_gap = 0.2;
+    double **CV = new double *[F_P];
+
+    for (int i = 0; i < F_P; i++) {
+        CV[i] = new double[F_P];
+        for (int j = 0; j < F_P; j++) {
             if (i == j)
                 CV[i][j] = 1.0;
             else
-                CV[i][j] = 0.5;
+                CV[i][j] = base_cv;
         }
     }
 
-    double **KCV = cholesky(CV, 50);
+    for (int i = 0; i < T_P; i++) {
+        for (int j = 0; j < T_P; j++) {
+            if (i == j)
+                CV[i][j] = 1.0;
+            else
+                CV[i][j] += cv_gap;
+        }
+    }
+
+    double **KCV = cholesky(CV, F_P);
+
     double *xx = new double[p];
     for (int i = 0; i < n; i++) {
         x[i] = new double[p];
@@ -420,12 +435,12 @@ XY_old::XY_old(int n0, int p0, int seed0, double *beta)
             x[i][j] = 0;
         }
 
-        for (int j = 0; j < 50; j++) {
-            for (int k = 0; k < 50; k++)
+        for (int j = 0; j < F_P; j++) {
+            for (int k = 0; k < F_P; k++)
                 x[i][j] += KCV[j][k] * xx[k];
         }
 
-        for (int j = 50; j < p; j++)
+        for (int j = F_P; j < p; j++)
             x[i][j] = xx[j];
 
         for (int j = 0; j < p; j++)
@@ -433,7 +448,7 @@ XY_old::XY_old(int n0, int p0, int seed0, double *beta)
     }
 
     delete[] xx;
-    for (int i = 0; i < 50; i++) {
+    for (int i = 0; i < F_P; i++) {
         delete[] KCV[i];
         delete[] CV[i];
     }
@@ -448,7 +463,7 @@ XY_old::XY_old(int n0, int p0, int seed0, double *beta)
 
     for (int i = 0; i < n; i++) {
         c = uni_dist(e);
-        if (0.5 < c) {
+        if (0.75 < c) {
             //y[i] = c;
             status[i] = 0;
         }

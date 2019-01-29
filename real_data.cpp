@@ -22,8 +22,8 @@
 
 using namespace std;
 
-int n = 100;
-int p = 200;
+int n = 200;
+int p = 500;
 char sr = 'N';
 char c_sim = 'Y';
 
@@ -149,8 +149,6 @@ int main()
         int n0 = int(floor(n / 2.0) + 0.5);
 #endif // TRAIN_TEST
         int n1 = n - n0;
-
-        double c = 0, c_LASSO = 0;
         XY_old test0, test1;
         ALPath pre_lasso(p);
         ALPath pre_apml0(p);
@@ -190,10 +188,10 @@ int main()
             XY_new test10(test0);
 #ifdef CINDEX
             XY_new test11(test1);
-            cv_path(test10, test11, 12, pre_lasso, pre_apml0);
+            cv_path(test10, test11, 50, pre_lasso, pre_apml0);
             test11.delete_new();
 #else
-            cv_path(test10, 20, pre_lasso, pre_apml0);
+            cv_path(test10, 50, pre_lasso, pre_apml0);
 #endif // CINDEX
             std::cout << "-------------------z1:" << z << '\n';
             test10.delete_new();

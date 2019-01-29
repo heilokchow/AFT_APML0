@@ -1,5 +1,6 @@
 #define _CRT_SECURE_NO_DEPRECATE
 #define TRUE_PARAMETER 15
+//#define TEST_MODE
 
 #include <iostream>
 #include <fstream>
@@ -15,16 +16,17 @@
 
 using namespace std;
 
-int n = 200;
-int p = 1000;
+int n = 100;
+int p = 200;
 int maxit = 50;
 int rep = 1;
 int s0 = 1;
 double lambda = 0.01;
-char np = 'Y';
+char np = 'N';
 
 int main(int argc, char *argv[])
 {
+#ifndef TEST_MODE
     double *beta = new double[p];
     ofstream myfile;
     ofstream lasso;
@@ -89,6 +91,50 @@ int main(int argc, char *argv[])
     myfile.close();
     lasso.close();
     }
+#endif
 
+#ifdef TEST_MODE
+    ofstream test;
+    test.open("test.txt");
+    int T_P = 15;
+    int F_P = 30;
+    double base_cv = 0.6;
+    double cv_gap = 0.2;
+    double **CV = new double *[F_P];
+    for (int i = 0; i < F_P; i++) {
+        CV[i] = new double[F_P];
+        for (int j = 0; j < F_P; j++) {
+            if (i == j)
+                CV[i][j] = 1.0;
+            else
+                CV[i][j] = base_cv;
+        }
+    }
+
+    for (int i = 0; i < T_P; i++) {
+        for (int j = 0; j < T_P; j++) {
+            if (i == j)
+                CV[i][j] = 1.0;
+            else
+                CV[i][j] += cv_gap;
+        }
+    }
+
+    double **KCV = cholesky(CV, F_P);
+
+    for (int i = 0; i < F_P; i++) {
+        for (int j = 0; j < F_P; j++)
+            test << KCV[i][j] << " ";
+        test << '\n';
+    }
+
+    for (int i = 0; i < F_P; i++) {
+        delete[] KCV[i];
+        delete[] CV[i];
+    }
+    delete[] KCV;
+    delete[] CV;
+    test.close();
+#endif // TEST_MODE
     return 0;
 }
