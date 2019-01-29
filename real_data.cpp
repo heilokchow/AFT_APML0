@@ -1,8 +1,10 @@
 #define _CRT_SECURE_NO_DEPRECATE
 #define CINDEX
 #define FOLDS 4
-#define TRAIN_TEST 0.75
+#define TRAIN_TEST 0.67
 #define MSE
+#define MULTI_SIMULATION
+#define TRUE_PARAMETER 15
 //#define TEST_MODE
 
 #include <iostream>
@@ -23,7 +25,7 @@
 using namespace std;
 
 int n = 200;
-int p = 500;
+int p = 2000;
 char sr = 'N';
 char c_sim = 'Y';
 
@@ -70,13 +72,10 @@ int main()
         for (int i = 0; i < 15; i++) {
             beta[i] = pow(-1.0, i)* 2 * std::exp(-i / 15.0);
         }
-        for (int i = 15; i < 100; i++) {
+        for (int i = 15; i < p; i++) {
             beta[i] = 0;
         }
-        for (int i = 100; i < p; i++) {
-            beta[i] = 0;
-        }
-        XY_old test(n, p, 1, beta);
+        XY_old test(n, p, 0, beta);
         for (int i = 0; i < n; i++) {
             y[i] = test.y[i];
             status[i] = test.status[i];
@@ -149,11 +148,31 @@ int main()
         int n0 = int(floor(n / 2.0) + 0.5);
 #endif // TRAIN_TEST
         int n1 = n - n0;
-        XY_old test0, test1;
         ALPath pre_lasso(p);
         ALPath pre_apml0(p);
+        XY_old test0, test1;
 
-        for (int z = 0; z < 20; z++) {
+#ifdef MULTI_SIMULATION
+        double *beta = new double[p];
+        for (int i = 0; i < 15; i++) {
+            beta[i] = pow(-1.0, i)* 2 * std::exp(-i / 15.0);
+        }
+        for (int i = 15; i < p; i++) {
+            beta[i] = 0;
+        }
+        for (int i = 0; i < 20; i++) {
+            XY_old test(n, p, i + 1, beta);
+            for (int i = 0; i < n; i++) {
+                y[i] = test.y[i];
+                status[i] = test.status[i];
+                for (int j = 0; j < p; j++) {
+                    x[i][j] = test.x[i][j];
+                }
+            }
+            test.delete_old();
+#endif // MULTI_SIMULATION
+
+        for (int z = 0; z < 10; z++) {
             std::shuffle(&key[0], &key[n - 1], g);
             double *y0 = new double[n0];
             double **x0 = new double*[n0];
@@ -205,6 +224,11 @@ int main()
             pre_lasso.ALprint("_lasso");
             pre_apml0.ALprint("_apml0");
         }
+#ifdef MULTI_SIMULATION
+        }
+        delete[] beta;
+#endif // MULTI_SIMULATION
+
 //        time_t result = std::time(nullptr);
 //        myfile << asctime(localtime(&result)) << "\n";
 //        lasso << asctime(localtime(&result)) << "\n";
@@ -218,6 +242,8 @@ int main()
         }
         delete[] y;
         delete[] status;
+        delete[] x;
+        delete[] key;
     }
 #endif // TEST_MODE
 

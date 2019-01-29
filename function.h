@@ -8,7 +8,7 @@
 #include <cstring>
 
 #define USE_IDENTICAL 0
-#define THREAD_VALUE 6
+#define THREAD_VALUE 13
 
 using namespace std;
 
@@ -400,7 +400,7 @@ XY_old::XY_old(int n0, int p0, int seed0, double *beta)
 #else
     int T_P = 15;
     int F_P = 30;
-    double base_cv = 0;
+    double base_cv = 0.2;
     double cv_gap = 0.2;
     double **CV = new double *[F_P];
 
