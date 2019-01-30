@@ -18,3 +18,8 @@ bin/
 *.depend
 archive/
 apml0_old/
+time_log/
+real
+simulation
+temp_input/
+temp_output/
