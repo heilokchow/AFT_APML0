@@ -143,6 +143,7 @@ struct ALPath
 
 #ifdef CINDEX
     double c_index[43] = {0.0};
+    double c_index_[43] = {0.0};
 #ifdef MSE
     double mse_LG[43] ={0.0};
 #endif // MSE
@@ -183,6 +184,7 @@ struct ALPath
 
 #ifdef CINDEX
             AL_path << c_index[i] << ',';
+            AL_path << c_index_[i] << ',';
 #ifdef MSE
             AL_path << mse_LG[i] << ',';
 #endif // MSE
@@ -197,13 +199,13 @@ struct ALPath
     }
 
     void ALadd(int* k, double* lam, int sum, double** beta_path, double* LG_path);
-    void ALadd(int* k, double* lam, int sum, double** beta_path, double* LG_path, const XY_new& test_model);
+    void ALadd(int* k, double* lam, int sum, double** beta_path, double* LG_path, const XY_new& train_model, const XY_new& test_model);
 
 };
 
 void ALPath::ALadd(int* k, double* lam, int sum, double** beta_path, double* LG_path
 #ifdef CINDEX
-                   , const XY_new& test_model
+                   , const XY_new& train_model, const XY_new& test_model
 #endif // CINDEX
 )
 {
@@ -235,6 +237,8 @@ void ALPath::ALadd(int* k, double* lam, int sum, double** beta_path, double* LG_
 #ifdef CINDEX
                     double c = test_model.c_index(beta_path[j]);
                     c_index[i] = (c + c_index[i] * (ct[i] - 1))/ ct[i];
+                    double c_ = train_model.c_index(beta_path[j]);
+                    c_index_[i] = (c_ + c_index_[i] * (ct[i] - 1))/ ct[i];
 #ifdef MSE
                     double ms = test_model.LG_all(beta_path[j], 0)/(2.0 * test_model.n);
                     mse_LG[i] = (ms + mse_LG[i] * (ct[i] - 1))/ ct[i];
@@ -265,6 +269,8 @@ void ALPath::ALadd(int* k, double* lam, int sum, double** beta_path, double* LG_
 #ifdef CINDEX
                 double c = test_model.c_index(beta_path[j]);
                 c_index[i] = (c + c_index[i] * (ct[i] - 1))/ ct[i];
+                double c_ = train_model.c_index(beta_path[j]);
+                c_index_[i] = (c_ + c_index_[i] * (ct[i] - 1))/ ct[i];
 #ifdef MSE
                 double ms = test_model.LG_all(beta_path[j], 0)/(2.0 * test_model.n);
                 mse_LG[i] = (ms + mse_LG[i] * (ct[i] - 1))/ ct[i];
@@ -1305,8 +1311,8 @@ int k, ALPath& pre_lasso, ALPath& pre_apml0)
     }
     std::cout << "-------------------1\n";
 #ifdef CINDEX
-    pre_lasso.ALadd(k_sum__, lam_sum__, sum, lasso_t, lasso_LG, test_class);
-    pre_apml0.ALadd(k_sum__, lam_sum__, sum, apml0_t, apml0_LG, test_class);
+    pre_lasso.ALadd(k_sum__, lam_sum__, sum, lasso_t, lasso_LG, new_class, test_class);
+    pre_apml0.ALadd(k_sum__, lam_sum__, sum, apml0_t, apml0_LG, new_class, test_class);
 #else
     pre_lasso.ALadd(k_sum__, lam_sum__, sum, lasso_t, lasso_LG);
     pre_apml0.ALadd(k_sum__, lam_sum__, sum, apml0_t, apml0_LG);

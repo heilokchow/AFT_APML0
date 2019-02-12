@@ -3,7 +3,7 @@
 #define FOLDS 4
 #define TRAIN_TEST 0.67
 #define MSE
-#define MULTI_SIMULATION
+//#define MULTI_SIMULATION
 #define TRUE_PARAMETER 15
 //#define TEST_MODE
 
@@ -24,10 +24,10 @@
 
 using namespace std;
 
-int n = 200;
-int p = 2000;
+int n = 240;
+int p = 7399;
 char sr = 'N';
-char c_sim = 'Y';
+char c_sim = 'N';
 
 int main()
 {
