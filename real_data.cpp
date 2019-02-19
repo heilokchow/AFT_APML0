@@ -26,7 +26,7 @@ using namespace std;
 
 int n = 240;
 int p = 7399;
-char sr = 'N';
+char sr = 'Y';
 char c_sim = 'N';
 
 int main()
