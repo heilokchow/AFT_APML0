@@ -1,10 +1,11 @@
 #define _CRT_SECURE_NO_DEPRECATE
-#define CINDEX
+//#define CINDEX
 #define FOLDS 4
-#define TRAIN_TEST 0.67
-#define MSE
+#define TRAIN_TEST 1
+//#define MSE
 //#define MULTI_SIMULATION
 #define TRUE_PARAMETER 15
+#define REPLI 1
 //#define TEST_MODE
 
 #include <iostream>
@@ -24,9 +25,9 @@
 
 using namespace std;
 
-int n = 240;
+int n = 235;
 int p = 7399;
-char sr = 'Y';
+char sr = 'N';
 char c_sim = 'N';
 
 int main()
@@ -172,7 +173,7 @@ int main()
             test.delete_old();
 #endif // MULTI_SIMULATION
 
-        for (int z = 0; z < 10; z++) {
+        for (int z = 0; z < REPLI; z++) {
             std::shuffle(&key[0], &key[n - 1], g);
             double *y0 = new double[n0];
             double **x0 = new double*[n0];
@@ -181,16 +182,31 @@ int main()
             double **x1 = new double*[n1];
             double *status1 = new double[n1];
 
-            for (int i = 0; i < n0; i++) {
-                y0[i] = y[key[i]];
-                x0[i] = x[key[i]];
-                status0[i] = status[key[i]];
-            }
+            if (TRAIN_TEST != 1) {
 
-            for (int i = n0; i < n; i++) {
-                y1[i - n0] = y[key[i]];
-                x1[i - n0] = x[key[i]];
-                status1[i - n0] = status[key[i]];
+                for (int i = 0; i < n0; i++) {
+                    y0[i] = y[key[i]];
+                    x0[i] = x[key[i]];
+                    status0[i] = status[key[i]];
+                }
+
+                for (int i = n0; i < n; i++) {
+                    y1[i - n0] = y[key[i]];
+                    x1[i - n0] = x[key[i]];
+                    status1[i - n0] = status[key[i]];
+                }
+                test1.y = y1;
+                test1.x = x1;
+                test1.status = status1;
+                test1.n = n1;
+                test1.p = p;
+            }
+            else {
+                for (int i = 0; i < n0; i++) {
+                    y0[i] = y[i];
+                    x0[i] = x[i];
+                    status0[i] = status[i];
+                }
             }
 
             test0.y = y0;
@@ -198,17 +214,14 @@ int main()
             test0.status = status0;
             test0.n = n0;
             test0.p = p;
-            test1.y = y1;
-            test1.x = x1;
-            test1.status = status1;
-            test1.n = n1;
-            test1.p = p;
 
             XY_new test10(test0);
 #ifdef CINDEX
-            XY_new test11(test1);
-            cv_path(test10, test11, 50, pre_lasso, pre_apml0);
-            test11.delete_new();
+            if (TRAIN_TEST != 1) {
+                XY_new test11(test1);
+                cv_path(test10, test11, 50, pre_lasso, pre_apml0);
+                test11.delete_new();
+            }
 #else
             cv_path(test10, 50, pre_lasso, pre_apml0);
 #endif // CINDEX
