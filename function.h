@@ -8,7 +8,7 @@
 #include <cstring>
 
 #define USE_IDENTICAL 0
-#define THREAD_VALUE 13
+#define THREAD_VALUE 8
 
 using namespace std;
 

@@ -1,13 +1,13 @@
 #define _CRT_SECURE_NO_DEPRECATE
+#define TRUE_PARAMETER 15
+#define REPLI 1
+
 //#define CINDEX
 #define FOLDS 4
 #define TRAIN_TEST 1
 //#define MSE
 //#define MULTI_SIMULATION
-#define TRUE_PARAMETER 15
-#define REPLI 1
 //#define TEST_MODE
-
 #include <iostream>
 #include <fstream>
 #include <cmath>
@@ -16,8 +16,6 @@
 #include <stdio.h>
 #include <math.h>
 #include <ctime>
-#include "cdlasso.h"
-#include "function.h"
 #include <string>
 #include <sstream>
 #include <cstring>
@@ -25,10 +23,50 @@
 
 using namespace std;
 
+#ifndef ILLUSTRATION
 int n = 235;
 int p = 7399;
 char sr = 'N';
 char c_sim = 'N';
+
+#else
+int n = 100;
+int p = 200;
+char sr = 'N';
+char c_sim = 'Y';
+
+#ifndef CINDEX
+#define CINDEX
+#endif // CINDEX
+
+#ifdef FOLDS
+#undef FOLDS
+#endif // FOLDS
+#define FOLDS 4
+
+#ifdef TRAIN_TEST
+#undef TRAIN_TEST
+#endif // TRAIN_TEST
+#define TRAIN_TEST 0.667
+
+#ifndef MSE
+#define MSE
+#endif // MSE
+
+#ifdef MULTI_SIMULATION
+#undef MULTI_SIMULATION
+#endif // MULTI_SIMULATION
+
+#undef REPLI
+#define REPLI 1
+
+#ifdef TEST_MODE
+#undef TEST_MODE
+#endif // TEST_MODE
+#endif // ILLUSTRATION
+
+#include "cdlasso.h"
+#include "function.h"
 
 int main()
 {
@@ -281,3 +319,6 @@ int main()
 #endif // TEST_MODE
     return 0;
 }
+
+
+

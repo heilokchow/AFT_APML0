@@ -23,3 +23,5 @@ real
 simulation
 temp_input/
 temp_output/
+.Rproj.user
+test

@@ -11,8 +11,11 @@ real: real_data.o
 real_data.o: real_data.cpp cdlasso.h function.h
 	g++ -c real_data.cpp -std=c++11 -lpthread -O2
 
+test: real_data.cpp cdlasso.h function.h
+	g++ -o test real_data.cpp -DILLUSTRATION -std=c++11 -lpthread -O2
+
 clean:
-	rm *.o simulation real
+	rm *.o simulation real test
 
 run_real: real
 	./real
