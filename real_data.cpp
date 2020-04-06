@@ -1,6 +1,7 @@
 #define _CRT_SECURE_NO_DEPRECATE
 #define TRUE_PARAMETER 15
 #define REPLI 1
+#define ILLUSTRATION
 
 //#define CINDEX
 #define FOLDS 4
@@ -30,8 +31,8 @@ char sr = 'N';
 char c_sim = 'N';
 
 #else
-int n = 100;
-int p = 200;
+int n = 1000;
+int p = 2000;
 char sr = 'N';
 char c_sim = 'Y';
 
@@ -257,7 +258,7 @@ int main()
 #ifdef CINDEX
             if (TRAIN_TEST != 1) {
                 XY_new test11(test1);
-                cv_path(test10, test11, 50, pre_lasso, pre_apml0);
+                cv_path(test10, test11, 1, pre_lasso, pre_apml0);
                 test11.delete_new();
             }
 #else

@@ -6,20 +6,19 @@
 #include <memory>
 #include <string>
 #include <cstring>
+#include "timer.h"
 
 #define USE_IDENTICAL 0
-#define THREAD_VALUE 8
+#define THREAD_VALUE 4
 
 using namespace std;
 
-struct c_range
-{
+struct c_range {
     double low;
     double high;
 };
 
-class XY_old
-{
+class XY_old {
 public:
     XY_old();
     XY_old(int,int,int,double*);
@@ -34,8 +33,7 @@ public:
     int p;
 };
 
-class XY_new
-{
+class XY_new {
 public:
     XY_new();
     XY_new(XY_old const &A);
@@ -92,8 +90,7 @@ private:
     int n1_test;
 };
 
-struct lasso_path
-{
+struct lasso_path {
     double lambda;
     XY_new model;
     double *beta = NULL;
@@ -859,8 +856,7 @@ void XY_new::cross_validation(ofstream &myfile, ofstream &lasso, int maxit)
             }
 
             seperate(target, d);
-            double *rep_beta = cdLasso(x_train, y_train, (n1_train + 1),
-                                        p, lambda[m] * (n_train + 1));
+            double *rep_beta = cdLasso(x_train, y_train, (n1_train + 1), p, lambda[m] * (n1_train + 1));
             int *rank = beta_rank(rep_beta, p);
             for (int j = 0; j < maxit; j++) {
                 for (int j_ = 0; j_ < p; j_++) {
@@ -963,8 +959,7 @@ double*XY_new::prognostic_index(double lambda, int k)
             target[j] = key[low + j];
         }
         seperate(target, d);
-        double *rep_beta = cdLasso(x_train, y_train, (n1_train + 1),
-            p, lambda * (n_train + 1));
+        double *rep_beta = cdLasso(x_train, y_train, (n1_train + 1), p, lambda * (n1_train + 1));
         int *rank = beta_rank(rep_beta, p);
 
         for (int j_ = 0; j_ < p; j_++) {
@@ -1069,7 +1064,7 @@ void *cv_lasso_run(void *arg)
 
         m->model.seperate(target, d);
         double *rep_beta = cdLasso(m->model.x_train, m->model.y_train, (m->model.n1_train + 1),
-                                        m->model.p, m->lambda* (m->model.n_train + 1));
+                                        m->model.p, m->lambda* (m->model.n1_train + 1));                              
             int *rank = beta_rank(rep_beta, m->model.p);
             for (int j = 0; j < m->sum; j++) {
                 for (int j_ = 0; j_ < m->model.p; j_++) {
@@ -1236,7 +1231,7 @@ int k, ALPath& pre_lasso, ALPath& pre_apml0)
     for (int i = 0; i < sum; i++) {
         cv_path[i].lambda = lam_sum[i];
         cv_path[i].beta = beta_sum[i];
-            cv_path[i].k = k_sum_;
+        cv_path[i].k = k_sum_;
         cv_path[i].model = new_class;
         cv_path[i].sum = sum;
         std::cout << "cv_lambda: " << cv_path[i].lambda << std::endl;
@@ -1260,6 +1255,11 @@ int k, ALPath& pre_lasso, ALPath& pre_apml0)
             pthread_join(tid1[i], (void**) &temp1);
         }
     }
+
+    // for (int j = 0; j < sum; j++) {
+    //     cv_lasso_run(&cv_path[j]);
+    // }
+    
 
     for (int i = 0; i < sum; i++) {
         for (int j = 0; j < sum; j++) {
