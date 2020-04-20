@@ -403,8 +403,21 @@ XY_old::XY_old(int n0, int p0, int seed0, double *beta)
 #else
     int T_P = 15;
     int F_P = 30;
-    double base_cv = 0.2;
-    double cv_gap = 0.2;
+    
+    double base_cv = 0;
+    double cv_gap = 0;
+
+#ifdef CV_STRUCT
+    if (CV_STRUCT == 1) {
+        base_cv = 0.2;
+        cv_gap = 0.2;
+    }
+    else if (CV_STRUCT == 2) {
+        base_cv = 0.4;
+        cv_gap = 0.2;
+    }
+#endif
+
     double **CV = new double *[F_P];
 
     for (int i = 0; i < F_P; i++) {
@@ -466,7 +479,7 @@ XY_old::XY_old(int n0, int p0, int seed0, double *beta)
 
     for (int i = 0; i < n; i++) {
         c = uni_dist(e);
-        if (0.75 < c) {
+        if (0.25 < c) {
             //y[i] = c;
             status[i] = 0;
         }

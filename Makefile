@@ -20,6 +20,11 @@ N_THREAD = $(shell grep -c ^processor /proc/cpuinfo)
 endif
 COMPILE_DEF += -DN_THREAD=$(N_THREAD)
 
+ifndef CV_STRUCT
+CV_STRUCT = 0
+endif
+COMPILE_DEF += -DCV_STRUCT=$(CV_STRUCT)
+
 .PHONY: run_real run_simulation
 
 simulation: simulation.o
