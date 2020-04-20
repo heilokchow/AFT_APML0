@@ -28,7 +28,7 @@ COMPILE_DEF += -DCV_STRUCT=$(CV_STRUCT)
 .PHONY: run_real run_simulation
 
 simulation: simulation.o
-	g++ simulation.o -o test1 -lpthread -O2
+	g++ simulation.o -o test -lpthread -O2
 
 simulation.o: simulation.cpp cdlasso.h function.h
 	g++ -c simulation.cpp $(COMPILE_DEF) -std=c++11 -lpthread -O2
@@ -43,7 +43,7 @@ test: real_data.cpp cdlasso.h function.h
 	g++ -o test real_data.cpp -DILLUSTRATION -std=c++11 -lpthread -O2
 
 clean:
-	rm *.o simulation real test
+	-rm *.o test
 
 run_real: real
 	./real
