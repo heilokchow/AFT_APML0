@@ -390,6 +390,7 @@ XY_old::XY_old(int n0, int p0, int seed0, double *beta)
     mt19937 e(seed);
     normal_distribution<double> normal_dist(0.0, 1.0);
     uniform_real_distribution<double> uni_dist(0.0, 1.0);
+    bernoulli_distribution d(0.25) ber_dist;
 
 #if USE_IDENTICAL == 1
     for (int i = 0; i < n; i++) {
@@ -447,7 +448,7 @@ XY_old::XY_old(int n0, int p0, int seed0, double *beta)
         y[i] = normal_dist(e);
 
         for (int j = 0; j < p; j++) {
-            xx[j] = normal_dist(e);
+            xx[j] = ber_dist(e);
             x[i][j] = 0;
         }
 
