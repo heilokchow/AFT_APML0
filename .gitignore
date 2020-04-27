@@ -3,7 +3,10 @@
 *.o
 AFT_APML0/
 temp.cpp
-time log/
+time 
+log/
+*.tar
+*.tar.gz
 cdlasso_v1.h
 debug_use/
 debug_simulation/
