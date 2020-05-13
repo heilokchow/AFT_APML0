@@ -1,7 +1,7 @@
 #define _CRT_SECURE_NO_DEPRECATE
 #define TRUE_PARAMETER 15
 #define REPLI 1
-#define ILLUSTRATION
+//#define ILLUSTRATION
 
 //#define CINDEX
 #define FOLDS 4

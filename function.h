@@ -9,7 +9,7 @@
 #include "timer.h"
 
 #define USE_IDENTICAL 0
-#define THREAD_VALUE 4
+#define THREAD_VALUE 8
 
 using namespace std;
 
@@ -1120,9 +1120,10 @@ const XY_new &test_class,
 #endif
 int k, ALPath& pre_lasso, ALPath& pre_apml0)
 {
+    printf("I'm %d\n, fuck", k);
     double lambda[50];
     for (int i = 0; i < 50; i++)
-        lambda[49 - i] = (i + 1)*0.01;
+        lambda[49 - i] = (i + 1)*0.005;
 
     lasso_path *path = new lasso_path[k];
     for (int i = 0; i < k; i++) {
@@ -1167,7 +1168,7 @@ int k, ALPath& pre_lasso, ALPath& pre_apml0)
 
     for (int i = 0; i < k; i++) {
         k_size[i] = number_nzero(path[i].beta, new_class.p);
-        std::cout << k_size[i] << std::endl;
+        std::cout << k_size[i] << "???????" << std::endl;
     }
 
     int sum = 0;
