@@ -24,7 +24,7 @@ public:
     XY_old(int,int,int,double*);
     ~XY_old();
     void delete_old();
-    void print_old();
+    void print_old(ofstream&);
 
     double *y;
     double **x;
@@ -489,19 +489,15 @@ XY_old::XY_old(int n0, int p0, int seed0, double *beta)
     }
 }
 
-void XY_old::print_old()
+void XY_old::print_old(ofstream & outFile)
 {
-    std::ofstream check;
-    check.open("check_file.txt");
-
     for (int i = 0; i < n; i++) {
-        check << y[i] << "," << status[i];
+        outFile << y[i] << "," << status[i];
         for (int j = 0; j < p; j++) {
-            check << "," << x[i][j];
+            outFile << "," << x[i][j];
         }
-        check << '\n';
+        outFile << '\n';
     }
-    check.close();
 }
 
 void XY_old::delete_old()
